@@ -476,8 +476,9 @@
 <body>
 
 <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
-  <h1 style="margin:0;font-size:18px;font-weight:600">本地字库点阵提取工具</h1>
-  <button class="btn-icon" id="themeBtn" title="切换主题">🎨</button>
+  <h1 style="margin:0;font-size:18px;font-weight:600" data-i18n="appTitle">本地字库点阵提取工具</h1>
+  <button class="btn-icon" id="themeBtn" data-i18n-title="switchTheme" title="切换主题">🎨</button>
+  <button class="btn-icon" id="langBtn" data-i18n-title="switchLang" title="切换语言">🌐</button>
 </div>
 
 <!-- 模态弹窗 -->
@@ -493,14 +494,14 @@
 
   <!-- ===== 中间参数面板（第2行，列1） ===== -->
   <div class="panel settings-panel">
-    <h2>[参数设置]</h2>
+    <h2 data-i18n="settings">[参数设置]</h2>
 
     <!-- 字体选择 -->
     <div class="control-group">
-      <label>字体文件</label>
+      <label data-i18n="fontFile">字体文件</label>
       <div class="btn-group">
         <div class="file-input-wrapper">
-          <button class="btn btn-primary">选择字体文件</button>
+          <button class="btn btn-primary" data-i18n="selectFont">选择字体文件</button>
           <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2,.ttc">
         </div>
       </div>
@@ -509,22 +510,22 @@
 
     <!-- 本地字库列表 -->
     <div class="control-group" id="localFontsGroup" style="display:none;flex:1;flex-direction:column;min-height:0;margin-bottom:0">
-      <label>本地字库列表 <span id="fontCount" style="color:var(--accent);font-size:12px"></span></label>
+      <label data-i18n="localFonts">本地字库列表 <span id="fontCount" style="color:var(--accent);font-size:12px"></span></label>
       <div id="fontShortcuts" class="size-shortcuts" style="margin-bottom:4px"></div>
       <div id="localFontList" class="font-list"></div>
     </div>
 
-    <div style="font-size:11px;color:#ff4444;margin:8px 0 12px 0;padding-bottom:4px;border-bottom:1px solid var(--border)">↓ 改变后会清空手动编辑过的点阵</div>
+    <div style="font-size:11px;color:#ff4444;margin:8px 0 12px 0;padding-bottom:4px;border-bottom:1px solid var(--border)" data-i18n="editWarning">↓ 改变后会清空手动编辑过的点阵</div>
 
     <!-- 输入文本 -->
     <div class="control-group">
-      <label>输入文本</label>
-      <textarea id="inputText" placeholder="输入要提取点阵的文本...">Hello Wold！</textarea>
+      <label data-i18n="inputText">输入文本</label>
+      <textarea id="inputText" data-i18n-placeholder="inputTextPlaceholder" placeholder="输入要提取点阵的文本...">Hello Wold！</textarea>
     </div>
 
     <!-- 字体大小 -->
     <div class="control-group">
-      <label>字体大小 <span class="value-display" id="fontSizeDisplay">16</span></label>
+      <label id="fontSizeLabel">字体大小 <span class="value-display" id="fontSizeDisplay">16</span></label>
       <div style="display:flex;gap:4px;align-items:center">
         <button class="stepper-btn" data-target="fontSize" data-step="-1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">−</button>
         <input type="range" id="fontSize" min="6" max="200" value="16" step="1" style="flex:1">
@@ -552,7 +553,7 @@
 
     <!-- 阈值 -->
     <div class="control-group">
-      <label>二值化阈值</label>
+      <label data-i18n="threshold">二值化阈值</label>
       <div style="display:flex;gap:4px;align-items:center">
         <button class="stepper-btn" data-target="threshold" data-step="-1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">−</button>
         <input type="range" id="threshold" min="1" max="255" value="180" step="1" style="flex:1">
@@ -564,13 +565,13 @@
 
   <!-- ===== 布局调整卡片（第2行，列2） ===== -->
   <div class="panel layout-panel">
-    <h2>[布局调整]</h2>
+    <h2 data-i18n="layout">[布局调整]</h2>
 
-    <div style="font-size:11px;color:#ff4444;margin:8px 0 12px 0;padding-bottom:4px;border-bottom:1px solid var(--border)">↓不会影响编辑过的点阵</div>
+    <div style="font-size:11px;color:#ff4444;margin:8px 0 12px 0;padding-bottom:4px;border-bottom:1px solid var(--border)" data-i18n="layoutHint">↓不会影响编辑过的点阵</div>
 
     <!-- 点阵单元大小 -->
     <div class="control-group">
-      <label>点阵单元大小 <span class="value-display" id="cellSizeDisplay">4</span></label>
+      <label id="cellSizeLabel">点阵单元大小 <span class="value-display" id="cellSizeDisplay">4</span></label>
       <div style="display:flex;gap:4px;align-items:center">
         <button class="stepper-btn" data-target="cellSize" data-step="-1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">−</button>
         <input type="range" id="cellSize" min="2" max="32" value="4" step="1" style="flex:1">
@@ -590,10 +591,10 @@
 
     <!-- 上下左右边距 -->
     <div class="control-group">
-      <label>边距</label>
+      <label data-i18n="padding">边距</label>
       <div style="display:grid;grid-template-columns:1fr 36px 1fr;grid-template-rows:1fr 36px 1fr;gap:4px;align-items:center;justify-items:center">
         <div style="grid-row:1;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:2px">
-          <span style="font-size:10px;color:var(--comment)">上</span>
+          <span style="font-size:10px;color:var(--comment)" data-i18n="top">上</span>
           <input type="number" id="paddingTop" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
           <div style="display:flex;gap:2px">
             <button class="stepper-btn" data-target="paddingTop" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
@@ -601,7 +602,7 @@
           </div>
         </div>
         <div style="grid-row:2;grid-column:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-          <span style="font-size:10px;color:var(--comment)">左</span>
+          <span style="font-size:10px;color:var(--comment)" data-i18n="left">左</span>
           <input type="number" id="paddingLeft" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
           <div style="display:flex;gap:2px">
             <button class="stepper-btn" data-target="paddingLeft" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
@@ -610,7 +611,7 @@
         </div>
         <div style="grid-row:2;grid-column:2;color:var(--comment);font-size:14px;opacity:0.3">+</div>
         <div style="grid-row:2;grid-column:3;display:flex;flex-direction:column;align-items:center;gap:2px">
-          <span style="font-size:10px;color:var(--comment)">右</span>
+          <span style="font-size:10px;color:var(--comment)" data-i18n="right">右</span>
           <input type="number" id="paddingRight" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
           <div style="display:flex;gap:2px">
             <button class="stepper-btn" data-target="paddingRight" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
@@ -618,7 +619,7 @@
           </div>
         </div>
         <div style="grid-row:3;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:2px">
-          <span style="font-size:10px;color:var(--comment)">下</span>
+          <span style="font-size:10px;color:var(--comment)" data-i18n="bottom">下</span>
           <input type="number" id="paddingBottom" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
           <div style="display:flex;gap:2px">
             <button class="stepper-btn" data-target="paddingBottom" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
@@ -630,7 +631,7 @@
 
     <!-- 字体位置偏移 -->
     <div class="control-group">
-      <label>字体位置偏移 <span class="value-display" id="offsetDisplay">X:0 Y:0</span></label>
+      <label id="offsetLabel">字体位置偏移 <span class="value-display" id="offsetDisplay">X:0 Y:0</span></label>
       <input type="number" id="offsetX" value="0" min="-100" max="100" style="display:none">
       <input type="number" id="offsetY" value="0" min="-100" max="100" style="display:none">
       <div class="dpad">
@@ -656,21 +657,21 @@
     <div class="control-group">
       <div class="control-row" style="gap:6px">
         <div class="control-group" style="flex:1">
-          <label style="font-size:11px">阴阳码</label>
+          <label style="font-size:11px" data-i18n="yinYang">阴阳码</label>
           <select id="yinYangSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
-            <option value="yang">阳码</option>
-            <option value="yin">阴码</option>
+            <option value="yang" data-i18n="yangCode">阳码</option>
+            <option value="yin" data-i18n="yinCode">阴码</option>
           </select>
         </div>
         <div class="control-group" style="flex:1">
-          <label style="font-size:11px">维度</label>
+          <label style="font-size:11px" data-i18n="dimension">维度</label>
           <select id="arrayDimSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
-            <option value="1d">字节压缩</option>
-            <option value="2d">逐位展开</option>
+            <option value="1d" data-i18n="dim1d">字节压缩</option>
+            <option value="2d" data-i18n="dim2d">逐位展开</option>
           </select>
         </div>
         <div class="control-group" style="flex:1">
-          <label style="font-size:11px">语言</label>
+          <label style="font-size:11px" data-i18n="exportLang">语言</label>
           <select id="langSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
             <option value="c">C/C++</option>
             <option value="arduino">Arduino</option>
@@ -687,8 +688,8 @@
 
     <!-- 操作按钮 -->
     <div class="btn-group" style="display:flex;gap:8px">
-      <button class="btn btn-primary" id="copyBtn" style="flex:1">复制导出</button>
-      <button class="btn btn-primary" id="saveBtn" style="flex:1">保存为文件</button>
+      <button class="btn btn-primary" id="copyBtn" style="flex:1" data-i18n="copyExport">复制导出</button>
+      <button class="btn btn-primary" id="saveBtn" style="flex:1" data-i18n="saveFile">保存为文件</button>
     </div>
   </div>
 
@@ -696,7 +697,7 @@
   <div class="preview-area">
     <!-- 点阵效果图 -->
     <div class="preview-card">
-      <h2>点阵效果图(可手动编辑)</h2>
+      <h2 data-i18n="bitmapPreview">点阵效果图(可手动编辑)</h2>
       <div class="canvas-wrapper" id="bitmapPreviewWrapper">
         <canvas id="bitmapCanvas"></canvas>
       </div>
@@ -707,7 +708,7 @@
 
     <!-- 原始渲染对比 -->
     <div class="preview-card">
-      <h2>原始渲染 (灰度采样参考)</h2>
+      <h2 data-i18n="rawRender">原始渲染 (灰度采样参考)</h2>
       <div class="canvas-wrapper" id="rawPreviewWrapper">
         <canvas id="rawCanvas"></canvas>
       </div>
@@ -716,10 +717,10 @@
     <!-- 导出区 -->
     <div class="export-card">
       <div class="export-header">
-        <h2>导出数据</h2>
+        <h2 data-i18n="exportData">导出数据</h2>
 
       </div>
-      <textarea id="exportOutput" readonly placeholder="点击「刷新导出」或调整参数后自动生成..."></textarea>
+      <textarea id="exportOutput" readonly data-i18n-placeholder="exportPlaceholder" placeholder="点击「刷新导出」或调整参数后自动生成..."></textarea>
     </div>
   </div>
 
@@ -771,7 +772,7 @@
   // ---- 状态 ----
   let loadedFontFamily = null;   // 自定义字体 family 名
   let loadedFontUrl    = null;   // 自定义字体 URL (blob:)
-  let loadedFontName   = '系统默认字体';
+  let loadedFontName   = '';
   let pendingRender    = null;
   let allFontsData     = [];     // 缓存本地字体列表
 
@@ -1230,7 +1231,7 @@
       const fgCount = c.matrix.reduce((s, r) => s + r.reduce((a, v) => a + v, 0), 0);
       totalFg += fgCount; totalBg += (c.width * c.height) - fgCount;
     }
-    bitmapDims.textContent = `根据最大字符计算点阵：${chars[0].width}×${chars[0].height}`;
+    bitmapDims.textContent = t('dimInfo') + chars[0].width + '×' + chars[0].height;
     updateExport();
   }
 
@@ -1287,7 +1288,7 @@
 
     // 1. Electron 环境 - 通过 Node.js font-list 包获取全部字体
     if (isElectronEnv()) {
-      localFontList.innerHTML = '<div class="font-loading">⏳ 正在通过 Electron 获取系统全部字体...</div>';
+      localFontList.innerHTML = '<div class="font-loading">' + t('fontLoading1') + '</div>';
       try {
         const fonts = await window.electronFonts.getFonts();
         if (fonts && fonts.length > 0) {
@@ -1301,13 +1302,13 @@
           return;
         }
       } catch (err) {
-        console.warn('Electron 字体获取失败, 回退 Canvas:', err);
+        console.warn('Electron font list failed, fallback Canvas:', err);
       }
     }
 
     // 2. Local Font Access API
     if (isLocalFontAPIAvailable()) {
-      localFontList.innerHTML = '<div class="font-loading">⏳ 正在查询本地字库...</div>';
+      localFontList.innerHTML = '<div class="font-loading">' + t('fontLoading2') + '</div>';
       try {
         const fonts = await navigator.fonts.queryLocalFonts();
         const fontMap = new Map();
@@ -1334,11 +1335,11 @@
     }
 
     // 3. Canvas 回退不可用
-    localFontList.innerHTML = '<div class="font-error">⚠ 当前环境无法获取本地字体列表（需要 Electron 或 Local Font Access API）</div>';
+    localFontList.innerHTML = '<div class="font-error">' + t('fontError') + '</div>';
   }
 
   function renderFontList(fonts) {
-    fontCount.textContent = `共 ${fonts.length} 种字体`;
+    fontCount.textContent = t('fontCount', fonts.length);
     let html = '';
     for (const font of fonts) {
       const isActive = (loadedFontFamily === 'local_' + font.family);
@@ -1383,7 +1384,7 @@
   }
 
   function renderFilteredFontList(fonts) {
-    fontCount.textContent = '共 ' + fonts.length + ' 种字体';
+    fontCount.textContent = t('fontCount', fonts.length);
     let html = '';
     for (const font of fonts) {
       const isActive = (loadedFontFamily === 'local_' + font.family);
@@ -1444,7 +1445,7 @@
       }
 
       loadedFontName   = familyName;
-      fontName.innerHTML = `已加载: <strong style="color:#43e97b">${familyName}</strong>`;
+      fontName.innerHTML = t('fontLoaded') + ' <strong style="color:#43e97b">' + familyName + '</strong>';
       fontFileInput.value = '';
 
       // 更新高亮
@@ -1457,7 +1458,7 @@
 
       scheduleRender();
     } catch (err) {
-      fontName.innerHTML = `❌ 字体加载失败: ${err.message}`;
+      fontName.innerHTML = t('fontLoadFail') + ' ' + err.message;
     }
   }
 
@@ -1480,10 +1481,10 @@
       loadedFontFamily = family;
       loadedFontUrl    = url;
       loadedFontName   = file.name;
-      fontName.innerHTML = `已加载: <strong style="color:#43e97b">${file.name}</strong>`;
+      fontName.innerHTML = t('fontLoaded') + ' <strong style="color:#43e97b">' + file.name + '</strong>';
       scheduleRender();
     } catch (err) {
-      fontName.innerHTML = `❌ 字体加载失败: ${err.message}`;
+      fontName.innerHTML = t('fontLoadFail') + ' ' + err.message;
     }
   });
 
@@ -1592,12 +1593,12 @@
       loadedFontFamily = localFamily;
       loadedFontUrl    = null;
       loadedFontName   = familyName;
-      fontName.innerHTML = `已加载: <strong style="color:#43e97b">${familyName}</strong>`;
+      fontName.innerHTML = t('fontLoaded') + ' <strong style="color:#43e97b">' + familyName + '</strong>';
       fontFileInput.value = '';
 
       // 添加到字体列表
       if (!allFontsData.some(f => f.family === familyName)) {
-        allFontsData.push({ family: familyName, styles: '手动添加', postscriptName: familyName, source: 'manual' });
+        allFontsData.push({ family: familyName, styles: '', postscriptName: familyName, source: 'manual' });
         allFontsData.sort((a, b) => a.family.localeCompare(b.family, 'zh-CN'));
         renderFontList(allFontsData);
       } else {
@@ -1608,7 +1609,7 @@
 
       scheduleRender();
     } catch (err) {
-      fontName.innerHTML = `❌ 字体加载失败: ${err.message}`;
+      fontName.innerHTML = t('fontLoadFail') + ' ' + err.message;
     }
   }
 
@@ -1646,25 +1647,25 @@
       chars = rawChars.map(c => ({ ...c, matrix: padMatrixToSize(c.matrix, uniW, uniH), width: uniW, height: uniH }));
     }
 
-    const dimName = { '1d': '字节压缩', '2d': '逐位展开' }[arrayDimSelect.value] || '字节压缩';
+    const dimName = { '1d': t('dim1d'), '2d': t('dim2d') }[arrayDimSelect.value] || t('dim1d');
     const langName = langSelect.options[langSelect.selectedIndex].text;
     const bytesPerChar = Math.ceil(uniW / 8) * uniH;
     const totalBytes = bytesPerChar * chars.length;
-    let output = `// 点阵数据 - 文本: "${text}" (共${chars.length}字)\n`;
-    output += `// 字体: "${loadedFontName}", 大小: ${fontSize}px, 阈值: ${thresholdVal}\n`;
-    output += `// 统一点阵尺寸: ${uniW} × ${uniH}\n`;
-    output += `// 边距(T/B/L/R): ${paddingTop.value}/${paddingBottom.value}/${paddingLeft.value}/${paddingRight.value}\n`;
-    output += `// 偏移(X/Y): ${offsetX.value}/${offsetY.value}\n`;
-    output += `// 阴阳码: ${yinYangSelect.value === 'yin' ? '阴码(0=前景)' : '阳码(1=前景)'}\n`;
-    output += `// 输出格式: ${dimName}, 语言: ${langName}\n`;
-    output += `// 单字大小: ${bytesPerChar} 字节, 总计: ${totalBytes} 字节\n\n`;
+    let output = t('exportHeader', text, chars.length) + '\n';
+    output += t('exportFont', loadedFontName, fontSize, thresholdVal) + '\n';
+    output += t('exportSize', uniW, uniH) + '\n';
+    output += t('exportPadding', paddingTop.value, paddingBottom.value, paddingLeft.value, paddingRight.value) + '\n';
+    output += t('exportOffset', offsetX.value, offsetY.value) + '\n';
+    output += t('exportYinYang', yinYangSelect.value === 'yin' ? t('yinLabel') : t('yangLabel')) + '\n';
+    output += t('exportFormat', dimName, langName) + '\n';
+    output += t('exportSingleSize', bytesPerChar, totalBytes) + '\n\n';
 
     for (let ci = 0; ci < chars.length; ci++) {
       const c = chars[ci];
       const { matrix, width, height } = c;
 
       const charBytes = Math.ceil(width / 8) * height;
-      output += `// ===== 字 ${ci+1}: "${c.char}" (${width}×${height}, ${charBytes}B) =====\n`;
+      output += t('exportChar', ci+1, c.char, width, height, charBytes) + '\n';
 
       switch (format) {
         case 'binary': {
@@ -1850,7 +1851,7 @@
     try {
       await navigator.clipboard.writeText(exportOutput.value);
       const orig = copyBtn.textContent;
-      copyBtn.textContent = '✅ 已复制!';
+      copyBtn.textContent = t('copied');
       setTimeout(() => copyBtn.textContent = orig, 1500);
     } catch {
       // fallback
@@ -1873,6 +1874,162 @@
     URL.revokeObjectURL(url);
   }
 
+  // ============================================================
+  //  国际化 (i18n) — 必须在首次渲染前定义，因 renderBitmapPreview 调用 t()
+  // ============================================================
+  const LANG = {
+    'zh-cn': {
+      appTitle:'本地字库点阵提取工具', settings:'[参数设置]', fontFile:'字体文件',
+      selectFont:'选择字体文件', loadedFont:'已加载: 系统默认字体', localFonts:'本地字库列表',
+      editWarning:'↓ 改变后会清空手动编辑过的点阵', inputText:'输入文本',
+      inputTextPlaceholder:'输入要提取点阵的文本...', fontSize:'字体大小',
+      threshold:'二值化阈值', layout:'[布局调整]', layoutHint:'↓不会影响编辑过的点阵',
+      cellSize:'点阵单元大小', padding:'边距', top:'上', left:'左', right:'右', bottom:'下',
+      offset:'字体位置偏移', yinYang:'阴阳码', yangCode:'阳码', yinCode:'阴码',
+      dimension:'维度', dim1d:'字节压缩', dim2d:'逐位展开', exportLang:'语言',
+      copyExport:'复制导出', saveFile:'保存为文件',
+      bitmapPreview:'点阵效果图(可手动编辑)', rawRender:'原始渲染 (灰度采样参考)',
+      exportData:'导出数据', exportPlaceholder:'点击「刷新导出」或调整参数后自动生成...',
+      dimInfo:'根据最大字符计算点阵：', fontLoading1:'⏳ 正在通过 Electron 获取系统全部字体...',
+      fontLoading2:'⏳ 正在查询本地字库...', fontError:'⚠ 当前环境无法获取本地字体列表（需要 Electron 或 Local Font Access API）',
+      fontCount:'共 {0} 种字体', fontLoaded:'已加载:', fontLoadFail:'❌ 字体加载失败:',
+      copied:'✅ 已复制!',
+      exportHeader:'// 点阵数据 - 文本: "{0}" (共{1}字)',
+      exportFont:'// 字体: "{0}", 大小: {1}px, 阈值: {2}',
+      exportSize:'// 统一点阵尺寸: {0} × {1}',
+      exportPadding:'// 边距(T/B/L/R): {0}/{1}/{2}/{3}',
+      exportOffset:'// 偏移(X/Y): {0}/{1}',
+      exportYinYang:'// 阴阳码: {0}',
+      yinLabel:'阴码(0=前景)', yangLabel:'阳码(1=前景)',
+      exportFormat:'// 输出格式: {0}, 语言: {1}',
+      exportSingleSize:'// 单字大小: {0} 字节, 总计: {1} 字节',
+      exportChar:'// ===== 字 {0}: "{1}" ({2}×{3}, {4}B) =====',
+      dim1d:'字节压缩', dim2d:'逐位展开',
+      switchTheme:'切换主题', switchLang:'切换语言',
+      themeTitle:'选择主题配色', langTitle:'选择界面语言',
+      close:'关闭', confirm:'确定', cancel:'取消', tip:'提示',
+      themeMono:'黑白灰', themeDark:'暗色经典', themeOcean:'深海蓝', themeForest:'森林绿',
+      themeSunset:'日落粉', themeLight:'浅色', themeLavender:'薰衣草紫', themeAmber:'琥珀金',
+      themeNord:'北欧极光', themeCoffee:'咖啡棕', themeMidnight:'午夜蓝', themeCherry:'樱桃红',
+      themeMint:'薄荷绿', themeSakura:'樱花粉', themeDracula:'德古拉紫',
+    },
+    'en': {
+      appTitle:'Local Font Bitmap Extractor', settings:'[Settings]', fontFile:'Font File',
+      selectFont:'Select Font File', loadedFont:'Loaded: System Default', localFonts:'Local Fonts',
+      editWarning:'↓ Changes will clear manually edited bitmap', inputText:'Input Text',
+      inputTextPlaceholder:'Enter text to extract bitmap...', fontSize:'Font Size',
+      threshold:'Threshold', layout:'[Layout]', layoutHint:'↓ Does NOT affect edited bitmap',
+      cellSize:'Cell Size', padding:'Padding', top:'Top', left:'Left', right:'Right', bottom:'Bottom',
+      offset:'Offset', yinYang:'Yin/Yang', yangCode:'Yang Code', yinCode:'Yin Code',
+      dimension:'Dimension', dim1d:'Byte Packed', dim2d:'Bit Expanded', exportLang:'Language',
+      copyExport:'Copy Export', saveFile:'Save as File',
+      bitmapPreview:'Bitmap Preview (editable)', rawRender:'Raw Render (grayscale reference)',
+      dimInfo:'Bitmap size based on max char:', fontLoading1:'⏳ Fetching system fonts via Electron...',
+      fontLoading2:'⏳ Querying local fonts...', fontError:'⚠ Cannot list local fonts (requires Electron or Local Font Access API)',
+      fontCount:'{0} fonts total', fontLoaded:'Loaded:', fontLoadFail:'❌ Font load failed:',
+      copied:'✅ Copied!',
+      exportHeader:'// Bitmap Data - Text: "{0}" ({1} chars)',
+      exportFont:'// Font: "{0}", Size: {1}px, Threshold: {2}',
+      exportSize:'// Unified bitmap size: {0} × {1}',
+      exportPadding:'// Padding(T/B/L/R): {0}/{1}/{2}/{3}',
+      exportOffset:'// Offset(X/Y): {0}/{1}',
+      exportYinYang:'// Yin/Yang: {0}',
+      yinLabel:'Yin Code (0=foreground)', yangLabel:'Yang Code (1=foreground)',
+      exportFormat:'// Format: {0}, Language: {1}',
+      exportSingleSize:'// Single char: {0} bytes, Total: {1} bytes',
+      exportChar:'// ===== Char {0}: "{1}" ({2}×{3}, {4}B) =====',
+      dim1d:'Byte Packed', dim2d:'Bit Expanded',
+      exportData:'Export Data', exportPlaceholder:'Click "Refresh Export" or adjust parameters...',
+      switchTheme:'Switch Theme', switchLang:'Switch Language',
+      themeTitle:'Choose Theme', langTitle:'Choose Language',
+      close:'Close', confirm:'OK', cancel:'Cancel', tip:'Tip',
+      themeMono:'Mono', themeDark:'Dark', themeOcean:'Ocean', themeForest:'Forest',
+      themeSunset:'Sunset', themeLight:'Light', themeLavender:'Lavender', themeAmber:'Amber',
+      themeNord:'Nord', themeCoffee:'Coffee', themeMidnight:'Midnight', themeCherry:'Cherry',
+      themeMint:'Mint', themeSakura:'Sakura', themeDracula:'Dracula',
+    },
+  };
+  let currentLang = localStorage.getItem('fontbitmap_lang') || 'en';
+
+  function t(key, ...args) {
+    const dict = LANG[currentLang] || LANG['zh-cn'];
+    let str = dict[key];
+    if (str === undefined) str = LANG['zh-cn'][key];
+    if (str === undefined) return key;
+    if (args.length) str = str.replace(/\{(\d+)\}/g, (m, i) => args[i] !== undefined ? args[i] : m);
+    return str;
+  }
+
+  function applyLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('fontbitmap_lang', lang);
+    document.title = t('appTitle');
+    const h1 = document.querySelector('h1');
+    if (h1) h1.textContent = t('appTitle');
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return;
+      if (el.tagName === 'OPTION') { el.textContent = t(key); return; }
+      el.textContent = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      el.title = t(el.dataset.i18nTitle);
+    });
+    // 单独处理字体名称显示
+    const fnEl = document.getElementById('fontName');
+    if (fnEl && !loadedFontFamily) {
+      fnEl.textContent = t('loadedFont');
+    } else if (fnEl && loadedFontName) {
+      fnEl.innerHTML = t('fontLoaded') + ' <strong style="color:#43e97b">' + loadedFontName + '</strong>';
+    }
+    // 处理带值显示的标签（仅替换文本节点，保留原 span 元素引用）
+    const labelMap = { fontSizeLabel:'fontSize', cellSizeLabel:'cellSize', offsetLabel:'offset' };
+    for (const [id, key] of Object.entries(labelMap)) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      // 找到第一个文本节点并替换其内容
+      const nodes = Array.from(el.childNodes);
+      const textNode = nodes.find(n => n.nodeType === 3 && n.textContent.trim());
+      if (textNode) {
+        textNode.textContent = t(key);
+      } else {
+        // 如果没有独立的文本节点，在前面插入
+        const span = el.querySelector('.value-display');
+        if (span) el.insertBefore(document.createTextNode(t(key) + ' '), span);
+      }
+    }
+  }
+
+  function showLangModal() {
+    const langs = [
+      ['zh-cn','🇨🇳 中文'],
+      ['en','🇬🇧 English'],
+    ];
+    const html = '<div class="theme-grid">'
+      + langs.map(([code, label]) =>
+        '<div class="theme-option' + (currentLang === code ? ' theme-selected' : '') + '" data-lang="' + code + '" style="cursor:pointer;flex:1;min-width:100px;">' + label + '</div>'
+      ).join('')
+      + '</div>';
+    showModal({ title: t('langTitle'), html, confirmText: false, cancelText: t('close'), width: '480px' });
+    const footer = document.getElementById('modalFooter');
+    if (footer) footer.style.justifyContent = 'center';
+    setTimeout(() => {
+      document.querySelectorAll('.theme-option[data-lang]').forEach(el => {
+        el.addEventListener('click', () => {
+          applyLang(el.dataset.lang);
+          document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('theme-selected'));
+          // 重新生成动态内容
+          if (typeof fullRender === 'function') fullRender();
+          if (typeof listLocalFonts === 'function') listLocalFonts();
+          closeModal();
+        });
+      });
+    }, 50);
+  }
+
   // ---- 首次渲染 ----
   fullRender();
 
@@ -1886,21 +2043,21 @@
   //  主题系统
   // ============================================================
   const THEMES = {
-    'mono':    { bg:'#121212', text:'#eeeeee', accent:'#bbbbbb', comment:'#888888', raised:'#1e1e1e', border:'#333333', danger:'#ff5252', success:'#69f0ae', label:'黑白灰' },
-    'dark':    { bg:'#0d1117', text:'#e6edf3', accent:'#58a6ff', comment:'#8b949e', raised:'#161b22', border:'#21262d', danger:'#f85149', success:'#3fb950', label:'暗色经典' },
-    'ocean':   { bg:'#0a1929', text:'#e3f2fd', accent:'#64b5f6', comment:'#90a4ae', raised:'#0d2137', border:'#1a3a5c', danger:'#ef5350', success:'#66bb6a', label:'深海蓝' },
-    'forest':  { bg:'#0f1a10', text:'#e8f5e9', accent:'#81c784', comment:'#a5b5a5', raised:'#1a2b1c', border:'#2d4a30', danger:'#e57373', success:'#4caf50', label:'森林绿' },
-    'sunset':  { bg:'#1a1015', text:'#fce4ec', accent:'#f48fb1', comment:'#b0a0a8', raised:'#2a1a20', border:'#4a2a35', danger:'#ef5350', success:'#81c784', label:'日落粉' },
-    'light':   { bg:'#ffffff', text:'#1f2328', accent:'#0969da', comment:'#656d76', raised:'#f6f8fa', border:'#d0d7de', danger:'#cf222e', success:'#1a7f37', label:'浅色' },
-    'lavender':{ bg:'#1a1a2e', text:'#e8e0f0', accent:'#c084fc', comment:'#a896c0', raised:'#252540', border:'#3a3a5c', danger:'#f87171', success:'#86efac', label:'薰衣草紫' },
-    'amber':   { bg:'#1a1410', text:'#fef3c7', accent:'#fbbf24', comment:'#b89b6a', raised:'#2a2018', border:'#4a3828', danger:'#f87171', success:'#86efac', label:'琥珀金' },
-    'nord':    { bg:'#2e3440', text:'#eceff4', accent:'#88c0d0', comment:'#81a1c1', raised:'#3b4252', border:'#4c566a', danger:'#bf616a', success:'#a3be8c', label:'北欧极光' },
-    'coffee':  { bg:'#1c1613', text:'#e8d5c4', accent:'#c7956d', comment:'#a08a78', raised:'#2a221d', border:'#3d322b', danger:'#e57373', success:'#81c784', label:'咖啡棕' },
-    'midnight':{ bg:'#000022', text:'#c8d6e5', accent:'#00b8ff', comment:'#7f8fa6', raised:'#0a0a3a', border:'#1a1a5a', danger:'#ff6b6b', success:'#2ed573', label:'午夜蓝' },
-    'cherry':  { bg:'#1a0a0a', text:'#ffd6d6', accent:'#ff6b6b', comment:'#cc8888', raised:'#2d1414', border:'#4d2424', danger:'#ff4757', success:'#7bed9f', label:'樱桃红' },
-    'mint':    { bg:'#0a1a14', text:'#e0f5ec', accent:'#2ed573', comment:'#80b8a0', raised:'#14281e', border:'#244030', danger:'#ff6b6b', success:'#7bed9f', label:'薄荷绿' },
-    'sakura':  { bg:'#1e141a', text:'#fce4ec', accent:'#f06292', comment:'#ba9aa8', raised:'#2a1a24', border:'#4a2a3a', danger:'#e57373', success:'#81c784', label:'樱花粉' },
-    'dracula': { bg:'#282a36', text:'#f8f8f2', accent:'#bd93f9', comment:'#6272a4', raised:'#44475a', border:'#555770', danger:'#ff5555', success:'#50fa7b', label:'德古拉紫' },
+    'mono':    { bg:'#121212', text:'#eeeeee', accent:'#bbbbbb', comment:'#888888', raised:'#1e1e1e', border:'#333333', danger:'#ff5252', success:'#69f0ae', label:'themeMono' },
+    'dark':    { bg:'#0d1117', text:'#e6edf3', accent:'#58a6ff', comment:'#8b949e', raised:'#161b22', border:'#21262d', danger:'#f85149', success:'#3fb950', label:'themeDark' },
+    'ocean':   { bg:'#0a1929', text:'#e3f2fd', accent:'#64b5f6', comment:'#90a4ae', raised:'#0d2137', border:'#1a3a5c', danger:'#ef5350', success:'#66bb6a', label:'themeOcean' },
+    'forest':  { bg:'#0f1a10', text:'#e8f5e9', accent:'#81c784', comment:'#a5b5a5', raised:'#1a2b1c', border:'#2d4a30', danger:'#e57373', success:'#4caf50', label:'themeForest' },
+    'sunset':  { bg:'#1a1015', text:'#fce4ec', accent:'#f48fb1', comment:'#b0a0a8', raised:'#2a1a20', border:'#4a2a35', danger:'#ef5350', success:'#81c784', label:'themeSunset' },
+    'light':   { bg:'#ffffff', text:'#1f2328', accent:'#0969da', comment:'#656d76', raised:'#f6f8fa', border:'#d0d7de', danger:'#cf222e', success:'#1a7f37', label:'themeLight' },
+    'lavender':{ bg:'#1a1a2e', text:'#e8e0f0', accent:'#c084fc', comment:'#a896c0', raised:'#252540', border:'#3a3a5c', danger:'#f87171', success:'#86efac', label:'themeLavender' },
+    'amber':   { bg:'#1a1410', text:'#fef3c7', accent:'#fbbf24', comment:'#b89b6a', raised:'#2a2018', border:'#4a3828', danger:'#f87171', success:'#86efac', label:'themeAmber' },
+    'nord':    { bg:'#2e3440', text:'#eceff4', accent:'#88c0d0', comment:'#81a1c1', raised:'#3b4252', border:'#4c566a', danger:'#bf616a', success:'#a3be8c', label:'themeNord' },
+    'coffee':  { bg:'#1c1613', text:'#e8d5c4', accent:'#c7956d', comment:'#a08a78', raised:'#2a221d', border:'#3d322b', danger:'#e57373', success:'#81c784', label:'themeCoffee' },
+    'midnight':{ bg:'#000022', text:'#c8d6e5', accent:'#00b8ff', comment:'#7f8fa6', raised:'#0a0a3a', border:'#1a1a5a', danger:'#ff6b6b', success:'#2ed573', label:'themeMidnight' },
+    'cherry':  { bg:'#1a0a0a', text:'#ffd6d6', accent:'#ff6b6b', comment:'#cc8888', raised:'#2d1414', border:'#4d2424', danger:'#ff4757', success:'#7bed9f', label:'themeCherry' },
+    'mint':    { bg:'#0a1a14', text:'#e0f5ec', accent:'#2ed573', comment:'#80b8a0', raised:'#14281e', border:'#244030', danger:'#ff6b6b', success:'#7bed9f', label:'themeMint' },
+    'sakura':  { bg:'#1e141a', text:'#fce4ec', accent:'#f06292', comment:'#ba9aa8', raised:'#2a1a24', border:'#4a2a3a', danger:'#e57373', success:'#81c784', label:'themeSakura' },
+    'dracula': { bg:'#282a36', text:'#f8f8f2', accent:'#bd93f9', comment:'#6272a4', raised:'#44475a', border:'#555770', danger:'#ff5555', success:'#50fa7b', label:'themeDracula' },
   };
   let currentTheme = localStorage.getItem('fontbitmap_theme') || 'mono';
 
@@ -1928,14 +2085,14 @@
         + '<div class="theme-swatches">'
         + ['bg','accent','comment','raised','border'].map(c => '<span style="background:' + th[c] + '"></span>').join('')
         + '</div>'
-        + '<span>' + th.label + '</span>'
+        + '<span>' + t(th.label) + '</span>'
         + '</div>';
     }).join('');
     showModal({
-      title: '选择主题配色',
+      title: t('themeTitle'),
       html: '<div class="theme-grid">' + html + '</div>',
       confirmText: false,
-      cancelText: '关闭',
+      cancelText: t('close'),
       width: '560px',
     });
     setTimeout(() => {
@@ -1949,6 +2106,8 @@
     }, 50);
   }
 
+
+
   // ---- 模态弹窗系统 ----
   const modal = {
     overlay: document.getElementById('modalOverlay'),
@@ -1956,7 +2115,6 @@
     title: document.getElementById('modalTitle'),
     body: document.getElementById('modalBody'),
     footer: document.getElementById('modalFooter'),
-    // closeBtn: document.getElementById('modalCloseBtn'),
   };
 
   function showModal(opts) {
@@ -1970,7 +2128,7 @@
       if (opts.cancelText !== false) {
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn btn-primary';
-        cancelBtn.textContent = opts.cancelText || '取消';
+        cancelBtn.textContent = opts.cancelText || t('cancel');
         cancelBtn.style.minWidth = '70px';
         cancelBtn.addEventListener('click', () => { closeModal(); resolve(null); });
         modal.footer.appendChild(cancelBtn);
@@ -1979,7 +2137,7 @@
       if (opts.confirmText !== false) {
         const confirmBtn = document.createElement('button');
         confirmBtn.className = 'btn btn-primary';
-        confirmBtn.textContent = opts.confirmText || '确定';
+        confirmBtn.textContent = opts.confirmText || t('confirm');
         confirmBtn.style.minWidth = '70px';
         confirmBtn.addEventListener('click', () => {
           const val = opts.getValue ? opts.getValue() : true;
@@ -2011,17 +2169,20 @@
 
 
   function modalAlert(msg) {
-    showModal({ title: '提示', html: msg, confirmText: '确定', cancelText: false });
+    showModal({ title: t('tip'), html: msg, confirmText: t('confirm'), cancelText: false });
   }
 
   // 主题按钮
   document.getElementById('themeBtn').addEventListener('click', showThemeModal);
+  // 语言按钮
+  document.getElementById('langBtn').addEventListener('click', showLangModal);
 
-  // 启动时应用已保存的主题
+  // 启动时应用已保存的主题和语言
   applyTheme(currentTheme);
+  applyLang(currentLang);
 
   // ---- 窗口 resize 不重绘, 但加个稳妥启动 ----
-  console.log('字库点阵提取工具已启动');
+  console.log('Font Bitmap Tool started');
 })();
 </script>
 </body>
