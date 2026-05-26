@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本地字库点阵提取工具</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --text: #e6edf3;
+    --accent: #58a6ff;
+    --comment: #8b949e;
+    --raised: #161b22;
+    --border: #21262d;
+    --danger: #f85149;
+    --success: #3fb950;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+    min-height: 100vh;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 28px;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .container {
+    display: grid;
+    grid-template-columns: 280px 280px 1fr;
+    gap: 16px;
+  }
+  .preview-area { align-self: start; }
+  /* ---- 控制面板 ---- */
+  .panel {
+    background: var(--raised);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .panel h2 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .control-group {
+    margin-bottom: 16px;
+  }
+  .control-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--comment);
+    margin-bottom: 4px;
+  }
+  .control-group .value-display {
+    float: right;
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 13px;
+  }
+  .control-group input[type="range"] {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    background: var(--border);
+    border-radius: 3px;
+    outline: none;
+  }
+  .control-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .control-group input[type="number"],
+  .control-group select,
+  .control-group input[type="text"] {
+    width: 100%;
+    padding: 6px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .control-group input[type="number"]:focus,
+  .control-group select:focus {
+    border-color: var(--accent);
+  }
+  .control-group textarea {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    min-height: 60px;
+  }
+  .control-group textarea:focus {
+    border-color: var(--accent);
+  }
+  .control-row {
+    display: flex;
+    gap: 8px;
+  }
+  .control-row .control-group {
+    flex: 1;
+  }
+  .btn {
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    line-height: 1.4;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover {
+    background: color-mix(in srgb, var(--accent) 80%, white);
+  }
+  .btn-success {
+    background: var(--success);
+    color: var(--bg);
+  }
+  .btn-success:hover {
+    background: color-mix(in srgb, var(--success) 80%, white);
+  }
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+  }
+  .btn-danger:hover {
+    background: color-mix(in srgb, var(--danger) 80%, white);
+  }
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .btn-group .btn { border: 1px solid var(--border); }
+  .file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+  }
+  .file-input-wrapper input[type="file"] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+  #fontName {
+    font-size: 12px;
+    color: var(--comment);
+    margin-top: 4px;
+    word-break: break-all;
+  }
+
+  /* ---- 右侧预览区 ---- */
+  .preview-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-self: start;
+  }
+  .preview-card {
+    background: var(--raised);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .preview-card h2 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    font-weight: 600;
+  }
+  .canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 16px;
+    overflow: auto;
+    position: relative;
+  }
+  .canvas-wrapper canvas {
+    image-rendering: pixelated;
+    display: block;
+  }
+  .info-bar {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--comment);
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .info-bar span {
+    background: var(--border);
+    padding: 2px 10px;
+    border-radius: 4px;
+  }
+  .info-bar em {
+    color: var(--accent);
+    font-style: normal;
+    font-weight: bold;
+  }
+
+  /* ---- 导出区 ---- */
+  .export-card {
+    background: var(--raised);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .export-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .export-header h2 {
+    font-size: 14px;
+    color: var(--accent);
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-weight: 600;
+  }
+  #exportOutput {
+    width: 100%;
+    min-height: 180px;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--comment);
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    resize: vertical;
+    outline: none;
+  }
+
+  /* ---- 滚动条美化 ---- */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--comment); }
+
+  /* ---- 本地字库列表 ---- */
+  .font-list {
+    flex: 1;
+    min-height: 80px;
+    max-height: 180px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px;
+  }
+  .font-list .font-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .font-list .font-item:hover {
+    background: var(--border);
+  }
+  .font-list .font-item.active {
+    background: var(--border);
+    border-left: 3px solid var(--accent);
+  }
+  .font-list .font-item .font-family {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .font-list .font-item .font-style {
+    color: var(--accent);
+    font-size: 11px;
+  }
+  .font-list .font-loading {
+    color: var(--accent);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+  .font-list .font-error {
+    color: var(--danger);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .size-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  #fontShortcuts .btn-shortcut {
+    flex: 0 0 calc(14.285% - 4px);
+    min-width: 0;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  .btn-shortcut {
+    flex: 1 0 calc(25% - 4px);
+    min-width: 32px;
+    padding: 4px 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--accent);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btn-shortcut:hover {
+    background: var(--border);
+    border-color: var(--accent);
+  }
+  .padding-input {
+    width: 100%;
+    padding: 6px 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  .padding-input::-webkit-outer-spin-button,
+  .padding-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .stepper-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .stepper-pair {
+    flex: 1;
+    display: flex;
+    gap: 3px;
+  }
+  .stepper-btn {
+    flex: 1;
+    padding: 4px 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--accent);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1;
+    text-align: center;
+  }
+  .stepper-btn:hover {
+    background: var(--border);
+  }
+  .stepper-btn:active {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-shortcut.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  /* ---- 方向键(DPAD) ---- */
+  .dpad {
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .dpad-row {
+    display:flex; align-items:center; gap:2px;
+  }
+  .dpad .stepper-btn {
+    width:32px; height:32px; font-size:16px; padding:0;
+  }
+  .dpad-center {
+    width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+    color:var(--comment); font-size:18px; font-weight:bold;
+  }
+  .dpad-row div:first-child, .dpad-row div:last-child { width:36px; }
+
+  /* ---- 模态弹窗 ---- */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(0,0,0,0.6); align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal-box {
+    background:var(--raised); border:1px solid var(--border); border-radius:12px;
+    padding:24px; max-width:560px; width:90%; max-height:80vh; overflow-y:auto;
+  }
+  .modal-box h2 { font-size:16px; color:var(--accent); margin-bottom:16px; }
+  /* ---- 主题选择器 ---- */
+  .theme-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .theme-option {
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:8px 12px; border:2px solid var(--border); border-radius:8px;
+    cursor:pointer; transition:all .2s; background:var(--raised);
+    flex:1 0 calc(33.33% - 8px); min-width:90px;
+  }
+  .theme-option:hover { border-color:var(--accent); }
+  .theme-option.theme-selected { border-color:var(--accent); box-shadow:0 0 8px var(--accent); }
+  .theme-swatches { display:flex; gap:2px; }
+  .theme-swatches span { width:12px; height:12px; border-radius:50%; display:inline-block; border:1px solid var(--border); }
+  .btn-icon {
+    background:transparent; border:1px solid var(--border);
+    border-radius:6px; cursor:pointer; font-size:16px;
+    padding:4px 8px; line-height:1; transition:all .2s;
+  }
+  .btn-icon:hover { border-color:var(--accent); background:var(--raised); }
+
+  @media (max-width: 1100px) {
+    .container { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+  <h1 style="margin:0;font-size:18px;font-weight:600">本地字库点阵提取工具</h1>
+  <button class="btn-icon" id="themeBtn" title="切换主题">🎨</button>
+</div>
+
+<!-- 模态弹窗 -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox">
+    <h2 id="modalTitle">选择主题配色</h2>
+    <div id="modalBody"></div>
+    <div id="modalFooter" style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ===== 中间参数面板（第2行，列1） ===== -->
+  <div class="panel settings-panel">
+    <h2>[参数设置]</h2>
+
+    <!-- 字体选择 -->
+    <div class="control-group">
+      <label>字体文件</label>
+      <div class="btn-group">
+        <div class="file-input-wrapper">
+          <button class="btn btn-primary">选择字体文件</button>
+          <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2,.ttc">
+        </div>
+      </div>
+      <div id="fontName">已加载: 系统默认字体</div>
+    </div>
+
+    <!-- 本地字库列表 -->
+    <div class="control-group" id="localFontsGroup" style="display:none;flex:1;flex-direction:column;min-height:0;margin-bottom:0">
+      <label>本地字库列表 <span id="fontCount" style="color:var(--accent);font-size:12px"></span></label>
+      <div id="fontShortcuts" class="size-shortcuts" style="margin-bottom:4px"></div>
+      <div id="localFontList" class="font-list"></div>
+    </div>
+
+    <div style="font-size:11px;color:#ff4444;margin:8px 0 12px 0;padding-bottom:4px;border-bottom:1px solid var(--border)">↓ 改变后会清空手动编辑过的点阵</div>
+
+    <!-- 输入文本 -->
+    <div class="control-group">
+      <label>输入文本</label>
+      <textarea id="inputText" placeholder="输入要提取点阵的文本...">你好</textarea>
+    </div>
+
+    <!-- 字体大小 -->
+    <div class="control-group">
+      <label>字体大小 <span class="value-display" id="fontSizeDisplay">16</span></label>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="stepper-btn" data-target="fontSize" data-step="-1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">−</button>
+        <input type="range" id="fontSize" min="6" max="200" value="16" step="1" style="flex:1">
+        <button class="stepper-btn" data-target="fontSize" data-step="1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">+</button>
+      </div>
+      <div class="size-shortcuts">
+        <button class="btn btn-shortcut" data-size="8">8</button>
+        <button class="btn btn-shortcut active" data-size="16">16</button>
+        <button class="btn btn-shortcut" data-size="24">24</button>
+        <button class="btn btn-shortcut" data-size="32">32</button>
+        <button class="btn btn-shortcut" data-size="40">40</button>
+        <button class="btn btn-shortcut" data-size="48">48</button>
+        <button class="btn btn-shortcut" data-size="56">56</button>
+        <button class="btn btn-shortcut" data-size="64">64</button>
+        <button class="btn btn-shortcut" data-size="72">72</button>
+        <button class="btn btn-shortcut" data-size="80">80</button>
+        <button class="btn btn-shortcut" data-size="88">88</button>
+        <button class="btn btn-shortcut" data-size="96">96</button>
+        <button class="btn btn-shortcut" data-size="104">104</button>
+        <button class="btn btn-shortcut" data-size="112">112</button>
+        <button class="btn btn-shortcut" data-size="120">120</button>
+        <button class="btn btn-shortcut" data-size="128">128</button>
+      </div>
+    </div>
+
+    <!-- 阈值 -->
+    <div class="control-group">
+      <label>二值化阈值</label>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="stepper-btn" data-target="threshold" data-step="-1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">−</button>
+        <input type="range" id="threshold" min="1" max="255" value="180" step="1" style="flex:1">
+        <button class="stepper-btn" data-target="threshold" data-step="1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">+</button>
+        <input type="number" id="thresholdInput" value="180" min="1" max="255" style="width:55px;padding:3px 4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;text-align:center;outline:none">
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 布局调整卡片（第2行，列2） ===== -->
+  <div class="panel layout-panel">
+    <h2>[布局调整]</h2>
+
+    <div style="font-size:11px;color:#ff4444;margin:8px 0 12px 0;padding-bottom:4px;border-bottom:1px solid var(--border)">↓不会影响编辑过的点阵</div>
+
+    <!-- 点阵单元大小 -->
+    <div class="control-group">
+      <label>点阵单元大小 <span class="value-display" id="cellSizeDisplay">4</span></label>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="stepper-btn" data-target="cellSize" data-step="-1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">−</button>
+        <input type="range" id="cellSize" min="2" max="32" value="4" step="1" style="flex:1">
+        <button class="stepper-btn" data-target="cellSize" data-step="1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">+</button>
+      </div>
+      <div class="size-shortcuts">
+        <button class="btn btn-shortcut active" data-cell="4">4</button>
+        <button class="btn btn-shortcut" data-cell="8">8</button>
+        <button class="btn btn-shortcut" data-cell="12">12</button>
+        <button class="btn btn-shortcut" data-cell="16">16</button>
+        <button class="btn btn-shortcut" data-cell="20">20</button>
+        <button class="btn btn-shortcut" data-cell="24">24</button>
+        <button class="btn btn-shortcut" data-cell="28">28</button>
+        <button class="btn btn-shortcut" data-cell="32">32</button>
+      </div>
+    </div>
+
+    <!-- 上下左右边距 -->
+    <div class="control-group">
+      <label>边距</label>
+      <div style="display:grid;grid-template-columns:1fr 36px 1fr;grid-template-rows:1fr 36px 1fr;gap:4px;align-items:center;justify-items:center">
+        <div style="grid-row:1;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <span style="font-size:10px;color:var(--comment)">上</span>
+          <input type="number" id="paddingTop" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
+          <div style="display:flex;gap:2px">
+            <button class="stepper-btn" data-target="paddingTop" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
+            <button class="stepper-btn" data-target="paddingTop" data-step="1" style="width:24px;height:22px;font-size:12px;padding:0">+</button>
+          </div>
+        </div>
+        <div style="grid-row:2;grid-column:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <span style="font-size:10px;color:var(--comment)">左</span>
+          <input type="number" id="paddingLeft" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
+          <div style="display:flex;gap:2px">
+            <button class="stepper-btn" data-target="paddingLeft" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
+            <button class="stepper-btn" data-target="paddingLeft" data-step="1" style="width:24px;height:22px;font-size:12px;padding:0">+</button>
+          </div>
+        </div>
+        <div style="grid-row:2;grid-column:2;color:var(--comment);font-size:14px;opacity:0.3">+</div>
+        <div style="grid-row:2;grid-column:3;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <span style="font-size:10px;color:var(--comment)">右</span>
+          <input type="number" id="paddingRight" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
+          <div style="display:flex;gap:2px">
+            <button class="stepper-btn" data-target="paddingRight" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
+            <button class="stepper-btn" data-target="paddingRight" data-step="1" style="width:24px;height:22px;font-size:12px;padding:0">+</button>
+          </div>
+        </div>
+        <div style="grid-row:3;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <span style="font-size:10px;color:var(--comment)">下</span>
+          <input type="number" id="paddingBottom" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
+          <div style="display:flex;gap:2px">
+            <button class="stepper-btn" data-target="paddingBottom" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
+            <button class="stepper-btn" data-target="paddingBottom" data-step="1" style="width:24px;height:22px;font-size:12px;padding:0">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 字体位置偏移 -->
+    <div class="control-group">
+      <label>字体位置偏移 <span class="value-display" id="offsetDisplay">X:0 Y:0</span></label>
+      <input type="number" id="offsetX" value="0" min="-100" max="100" style="display:none">
+      <input type="number" id="offsetY" value="0" min="-100" max="100" style="display:none">
+      <div class="dpad">
+        <div class="dpad-row">
+          <div></div>
+          <button class="stepper-btn" data-target="offsetY" data-step="1">↑</button>
+          <div></div>
+        </div>
+        <div class="dpad-row">
+          <button class="stepper-btn" data-target="offsetX" data-step="1">←</button>
+          <div class="dpad-center">+</div>
+          <button class="stepper-btn" data-target="offsetX" data-step="-1">→</button>
+        </div>
+        <div class="dpad-row">
+          <div></div>
+          <button class="stepper-btn" data-target="offsetY" data-step="-1">↓</button>
+          <div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 阴阳码 + 数组维度 + 语言 -->
+    <div class="control-group">
+      <div class="control-row" style="gap:6px">
+        <div class="control-group" style="flex:1">
+          <label style="font-size:11px">阴阳码</label>
+          <select id="yinYangSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
+            <option value="yang">阳码</option>
+            <option value="yin">阴码</option>
+          </select>
+        </div>
+        <div class="control-group" style="flex:1">
+          <label style="font-size:11px">维度</label>
+          <select id="arrayDimSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
+            <option value="1d">字节压缩</option>
+            <option value="2d">逐位展开</option>
+          </select>
+        </div>
+        <div class="control-group" style="flex:1">
+          <label style="font-size:11px">语言</label>
+          <select id="langSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
+            <option value="c">C/C++</option>
+            <option value="arduino">Arduino</option>
+            <option value="python">Python</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="java">Java</option>
+            <option value="csharp">C#</option>
+            <option value="js">JavaScript</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="btn-group" style="display:flex;gap:8px">
+      <button class="btn btn-primary" id="copyBtn" style="flex:1">复制导出</button>
+      <button class="btn btn-primary" id="saveBtn" style="flex:1">保存为文件</button>
+    </div>
+  </div>
+
+  <!-- ===== 右侧预览区（第4列） ===== -->
+  <div class="preview-area">
+    <!-- 点阵效果图 -->
+    <div class="preview-card">
+      <h2>点阵效果图(可手动编辑)</h2>
+      <div class="canvas-wrapper" id="bitmapPreviewWrapper">
+        <canvas id="bitmapCanvas"></canvas>
+      </div>
+      <div class="info-bar">
+        <span><em id="bitmapDims">0 × 0</em></span>
+      </div>
+    </div>
+
+    <!-- 原始渲染对比 -->
+    <div class="preview-card">
+      <h2>原始渲染 (灰度采样参考)</h2>
+      <div class="canvas-wrapper" id="rawPreviewWrapper">
+        <canvas id="rawCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- 导出区 -->
+    <div class="export-card">
+      <div class="export-header">
+        <h2>导出数据</h2>
+
+      </div>
+      <textarea id="exportOutput" readonly placeholder="点击「刷新导出」或调整参数后自动生成..."></textarea>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ---- DOM 引用 ----
+  const fontFileInput    = document.getElementById('fontFileInput');
+  const fontName         = document.getElementById('fontName');
+  const inputText        = document.getElementById('inputText');
+  const fontSizeSlider   = document.getElementById('fontSize');
+  const fontSizeDisplay  = document.getElementById('fontSizeDisplay');
+  const cellSizeSlider   = document.getElementById('cellSize');
+  const cellSizeDisplay  = document.getElementById('cellSizeDisplay');
+  const thresholdSlider  = document.getElementById('threshold');
+  const thresholdInput   = document.getElementById('thresholdInput');
+  const paddingTop       = document.getElementById('paddingTop');
+  const paddingBottom    = document.getElementById('paddingBottom');
+  const paddingLeft      = document.getElementById('paddingLeft');
+  const paddingRight     = document.getElementById('paddingRight');
+  const offsetX          = document.getElementById('offsetX');
+  const offsetY          = document.getElementById('offsetY');
+  const offsetDisplay    = document.getElementById('offsetDisplay');
+  function updateOffsetDisplay() { offsetDisplay.textContent = 'X:' + offsetX.value + ' Y:' + offsetY.value; }
+  updateOffsetDisplay();
+  const yinYangSelect    = document.getElementById('yinYangSelect');
+  const arrayDimSelect   = document.getElementById('arrayDimSelect');
+  const langSelect       = document.getElementById('langSelect');
+  const copyBtn          = document.getElementById('copyBtn');
+  const saveBtn          = document.getElementById('saveBtn');
+
+  const bitmapCanvas      = document.getElementById('bitmapCanvas');
+  const bitmapCtx         = bitmapCanvas.getContext('2d');
+  const rawCanvas         = document.getElementById('rawCanvas');
+  const rawCtx            = rawCanvas.getContext('2d');
+
+  const bitmapDims        = document.getElementById('bitmapDims');
+  const exportOutput      = document.getElementById('exportOutput');
+
+  // ---- 本地字库 DOM ----
+  const localFontsGroup   = document.getElementById('localFontsGroup');
+  const localFontList     = document.getElementById('localFontList');
+  const fontCount         = document.getElementById('fontCount');
+  const fontShortcuts     = document.getElementById('fontShortcuts');
+
+  // ---- 状态 ----
+  let loadedFontFamily = null;   // 自定义字体 family 名
+  let loadedFontUrl    = null;   // 自定义字体 URL (blob:)
+  let loadedFontName   = '系统默认字体';
+  let pendingRender    = null;
+  let allFontsData     = [];     // 缓存本地字体列表
+
+  // ---- 工具: 防抖 ----
+  function debounce(fn, ms) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), ms);
+    };
+  }
+
+  // ---- 节流 (动画帧) ----
+  function throttled(fn) {
+    let ticking = false;
+    return (...args) => {
+      if (!ticking) {
+        requestAnimationFrame(() => { ticking = false; fn(...args); });
+        ticking = true;
+      }
+    };
+  }
+
+  // ---- 核心函数: 获取像素矩阵 (自动裁剪空白) ----
+  function getBitmapMatrix(text, fontSize, thresholdVal) {
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+    const fontStr = `${fontSize}px "${loadedFontFamily || 'sans-serif'}"`;
+    measureCtx.font = fontStr;
+    const metrics = measureCtx.measureText(text);
+    const textWidth = metrics.width;
+    const textHeight = fontSize * 1.4;
+
+    // 先用大画布渲染（预留足够空间给偏移和边距）
+    const padExtra = 20;
+    const canvasW = Math.max(1, Math.ceil(textWidth) + padExtra * 2);
+    const canvasH = Math.max(1, Math.ceil(textHeight) + padExtra * 2);
+
+    tempCanvas.width = canvasW;
+    tempCanvas.height = canvasH;
+
+    tempCtx.fillStyle = '#ffffff';
+    tempCtx.fillRect(0, 0, canvasW, canvasH);
+
+    // 在中间绘制文字
+    tempCtx.font = fontStr;
+    tempCtx.textBaseline = 'top';
+    tempCtx.fillStyle = '#000000';
+    tempCtx.fillText(text, padExtra, padExtra);
+
+    // 采样像素，找到文字的实际边界框
+    const imageData = tempCtx.getImageData(0, 0, canvasW, canvasH);
+    const data = imageData.data;
+    const initialMatrix = [];
+
+    for (let row = 0; row < canvasH; row++) {
+      const rowData = [];
+      for (let col = 0; col < canvasW; col++) {
+        const idx = (row * canvasW + col) * 4;
+        const luminance = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
+        rowData.push(luminance < thresholdVal ? 1 : 0);
+      }
+      initialMatrix.push(rowData);
+    }
+
+    // 自动裁剪：找到前景像素的最小包围盒
+    let minRow = canvasH, maxRow = 0, minCol = canvasW, maxCol = 0;
+    let fg = 0;
+    for (let row = 0; row < canvasH; row++) {
+      for (let col = 0; col < canvasW; col++) {
+        if (initialMatrix[row][col] === 1) {
+          fg++;
+          if (row < minRow) minRow = row;
+          if (row > maxRow) maxRow = row;
+          if (col < minCol) minCol = col;
+          if (col > maxCol) maxCol = col;
+        }
+      }
+    }
+
+    // 无前景点 → 返回 1×1 空矩阵
+    if (fg === 0) {
+      const emptyCrop = [[0]];
+      const emptyCanvas = document.createElement('canvas');
+      emptyCanvas.width = 1; emptyCanvas.height = 1;
+      return { matrix: [[0]], rawMatrix: [[0]], cropMatrix: emptyCrop, cropW: 1, cropH: 1, width: 1, height: 1, fg: 0, bg: 1, tempCanvas: emptyCanvas };
+    }
+
+    // 裁剪后的基本尺寸
+    let cropW = maxCol - minCol + 1;
+    let cropH = maxRow - minRow + 1;
+
+    // 应用用户设置的边距
+    const pt = parseInt(paddingTop.value) || 0;
+    const pb = parseInt(paddingBottom.value) || 0;
+    const pl = parseInt(paddingLeft.value) || 0;
+    const pr = parseInt(paddingRight.value) || 0;
+
+    // 应用偏移
+    const ox = parseInt(offsetX.value) || 0;
+    const oy = parseInt(offsetY.value) || 0;
+
+    const finalW = Math.max(1, cropW + pl + pr);
+    const finalH = Math.max(1, cropH + pt + pb);
+
+    // 构建最终矩阵：裁剪 + 边距 + 偏移
+    const matrix = [];
+    for (let row = 0; row < finalH; row++) {
+      const rowData = [];
+      for (let col = 0; col < finalW; col++) {
+        // 映射到原始裁剪区域的坐标（含偏移）
+        const srcRow = row - pt + oy;
+        const srcCol = col - pl + ox;
+        if (srcRow >= 0 && srcRow < cropH && srcCol >= 0 && srcCol < cropW) {
+          rowData.push(initialMatrix[minRow + srcRow][minCol + srcCol]);
+        } else {
+          rowData.push(0);
+        }
+      }
+      matrix.push(rowData);
+    }
+
+    const totalPixels = finalW * finalH;
+    const fgCount = matrix.reduce((sum, r) => sum + r.reduce((s, v) => s + v, 0), 0);
+    const bgCount = totalPixels - fgCount;
+
+    // 阴阳码转换
+    const isYin = document.getElementById('yinYangSelect')?.value === 'yin';
+    const displayMatrix = isYin
+      ? matrix.map(r => r.map(v => v === 1 ? 0 : 1))
+      : matrix.map(r => [...r]);
+    const displayFg = isYin ? bgCount : fgCount;
+    const displayBg = isYin ? fgCount : bgCount;
+
+    // 生成最终的原始渲染图（裁剪后+边距）
+    const resultCanvas = document.createElement('canvas');
+    resultCanvas.width = finalW;
+    resultCanvas.height = finalH;
+    const rCtx = resultCanvas.getContext('2d');
+    rCtx.fillStyle = isYin ? '#000000' : '#ffffff';
+    rCtx.fillRect(0, 0, finalW, finalH);
+    const dotColor = isYin ? '#ffffff' : '#000000';
+    for (let row = 0; row < finalH; row++) {
+      for (let col = 0; col < finalW; col++) {
+        if (displayMatrix[row][col] === 1) {
+          rCtx.fillStyle = dotColor;
+          rCtx.fillRect(col, row, 1, 1);
+        }
+      }
+    }
+
+    // 裁剪后的原始矩阵（无空白，无边距）
+    const cropMatrix = [];
+    for (let r = 0; r < cropH; r++) {
+      const rowData = [];
+      for (let c = 0; c < cropW; c++) {
+        rowData.push(initialMatrix[minRow + r][minCol + c]);
+      }
+      cropMatrix.push(rowData);
+    }
+
+    return {
+      matrix: displayMatrix,
+      rawMatrix: matrix,
+      cropMatrix: cropMatrix,
+      cropW: cropW, cropH: cropH,
+      width: finalW, height: finalH,
+      fg: displayFg, bg: displayBg,
+      tempCanvas: resultCanvas
+    };
+  }
+
+  // ---- 获取当前主题色 ----
+  function themeColor(v) {
+    return getComputedStyle(document.documentElement).getPropertyValue('--' + v).trim();
+  }
+  function themeRgba(v, a) {
+    const hex = themeColor(v);
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // ---- 渲染点阵图 (单字) ----
+  function renderSingleBitmap(ctx, matrix, cellSize, offsetX, offsetY, label) {
+    const h = matrix.length;
+    if (h === 0) return 0;
+    const w = matrix[0].length;
+
+    const isYin = (document.getElementById('yinYangSelect')?.value === 'yin');
+
+    // 绘制每个点
+    for (let row = 0; row < h; row++) {
+      for (let col = 0; col < w; col++) {
+        const x = offsetX + col * cellSize;
+        const y = offsetY + row * cellSize;
+        const isFg = matrix[row][col] === 1;
+        const accent = themeColor('accent');
+        const raised = themeColor('raised');
+        const border = themeColor('border');
+        if (isFg) {
+          // 前景色
+          ctx.fillStyle = isYin ? raised : accent;
+          ctx.fillRect(x, y, cellSize, cellSize);
+          ctx.strokeStyle = isYin ? accent : border;
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(x, y, cellSize, cellSize);
+          if (!isYin) {
+            ctx.fillStyle = themeRgba('accent', 0.2);
+            ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+          }
+        } else {
+          // 背景色
+          ctx.fillStyle = isYin ? accent : raised;
+          ctx.fillRect(x, y, cellSize, cellSize);
+          ctx.strokeStyle = isYin ? border : accent;
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(x, y, cellSize, cellSize);
+          if (isYin) {
+            ctx.fillStyle = themeRgba('accent', 0.2);
+            ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+          }
+        }
+      }
+    }
+    // 在底部标注字符序号
+    ctx.fillStyle = themeColor('accent');
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, offsetX + (w * cellSize) / 2, offsetY + h * cellSize + 14);
+    return w * cellSize + 4; // 返回宽度 + 间距
+  }
+
+  // ---- 渲染原始采样图 (单字) ----
+  function renderRawSingle(ctx, charResult, offsetX, offsetY, maxH) {
+    const tempCanvas = charResult.tempCanvas;
+    ctx.drawImage(tempCanvas, offsetX, offsetY + (maxH - tempCanvas.height) / 2);
+  }
+
+  // ---- 将矩阵居中填充到目标尺寸 ----
+  function padMatrixToSize(matrix, targetW, targetH) {
+    const h = matrix.length;
+    if (h === 0) return matrix;
+    const w = matrix[0].length;
+    if (w === targetW && h === targetH) return matrix;
+
+    const offsetX = Math.floor((targetW - w) / 2);
+    const offsetY = Math.floor((targetH - h) / 2);
+
+    const result = [];
+    for (let row = 0; row < targetH; row++) {
+      const rowData = [];
+      for (let col = 0; col < targetW; col++) {
+        const srcRow = row - offsetY;
+        const srcCol = col - offsetX;
+        if (srcRow >= 0 && srcRow < h && srcCol >= 0 && srcCol < w) {
+          rowData.push(matrix[srcRow][srcCol]);
+        } else {
+          rowData.push(0);
+        }
+      }
+      result.push(rowData);
+    }
+    return result;
+  }
+
+  // ---- 保存原始裁剪矩阵 + 手动编辑差异 ----
+  let _rawChars = null;          // [{ char, matrix (裁剪后), width, height }] 不含边距/偏移
+  let _editDeltas = [];          // [{ charIdx, row, col }] 手动点击的位置
+  window._editKey = '';          // 标识文本/字体/阈值参数
+
+  // ---- 将边距/偏移应用到裁剪后的矩阵 ----
+  function applyPadding(rawMatrix, origW, origH) {
+    const pt = parseInt(paddingTop.value) || 0;
+    const pb = parseInt(paddingBottom.value) || 0;
+    const pl = parseInt(paddingLeft.value) || 0;
+    const pr = parseInt(paddingRight.value) || 0;
+    const ox = parseInt(offsetX.value) || 0;
+    const oy = parseInt(offsetY.value) || 0;
+    const finalW = Math.max(1, origW + pl + pr);
+    const finalH = Math.max(1, origH + pt + pb);
+    const matrix = [];
+    for (let row = 0; row < finalH; row++) {
+      const rowData = [];
+      for (let col = 0; col < finalW; col++) {
+        const srcRow = row - pt + oy;
+        const srcCol = col - pl + ox;
+        if (srcRow >= 0 && srcRow < origH && srcCol >= 0 && srcCol < origW) {
+          rowData.push(rawMatrix[srcRow][srcCol]);
+        } else {
+          rowData.push(0);
+        }
+      }
+      matrix.push(rowData);
+    }
+    return matrix;
+  }
+
+  // ---- 完整渲染流程 ----
+  function fullRender() {
+    const text = inputText.value || ' ';
+    const fontSize = parseFloat(fontSizeSlider.value);
+    const thresholdVal = parseInt(thresholdSlider.value);
+    const cellSize = parseInt(cellSizeSlider.value);
+    const newKey = text + '|' + fontSize + '|' + thresholdVal + '|' + (loadedFontFamily || '');
+
+    // 如果文本/字体/阈值未变，使用缓存的原始矩阵 + 边距 + 手动编辑
+    if (_rawChars && window._editKey === newKey) {
+      const chars = _rawChars.map(c => {
+        const matrix = applyPadding(c.matrix, c.width, c.height);
+        const h = matrix.length, w = matrix[0].length;
+        return { ...c, matrix, width: w, height: h };
+      });
+      // 重新应用手动编辑（原始坐标 → 边距偏移跟随）
+      const pt2 = parseInt(paddingTop.value) || 0;
+      const pl2 = parseInt(paddingLeft.value) || 0;
+      const ox2 = parseInt(offsetX.value) || 0;
+      const oy2 = parseInt(offsetY.value) || 0;
+      for (const d of _editDeltas) {
+        const pr = d.row + pt2 - oy2;
+        const pc = d.col + pl2 - ox2;
+        if (d.charIdx < chars.length && pr >= 0 && pr < chars[d.charIdx].matrix.length && pc >= 0 && pc < chars[d.charIdx].matrix[0].length) {
+          chars[d.charIdx].matrix[pr][pc] = d.val !== undefined ? d.val : 1;
+        }
+      }
+      // 生成 tempCanvas
+      for (const c of chars) {
+        const cv = document.createElement('canvas');
+        cv.width = c.width; cv.height = c.height;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, c.width, c.height);
+        for (let r = 0; r < c.height; r++)
+          for (let col = 0; col < c.width; col++)
+            if (c.matrix[r][col]) { ctx.fillStyle = '#000'; ctx.fillRect(col, r, 1, 1); }
+        c.tempCanvas = cv;
+      }
+      renderBitmapPreview(chars, cellSize);
+      renderRawPreview(chars);
+      return;
+    }
+
+    // 文本/字体/阈值变了 → 重新计算原始（无边距）矩阵
+    window._editKey = newKey;
+    _rawChars = null;
+    _editDeltas = [];
+    const rawChars = [];
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '\n' || ch === '\r') continue;
+      const result = getBitmapMatrix(ch, fontSize, thresholdVal);
+      rawChars.push({ char: ch, ...result });
+    }
+
+    if (rawChars.length === 0) {
+      const result = getBitmapMatrix(' ', fontSize, thresholdVal);
+      rawChars.push({ char: ' ', ...result });
+    }
+
+    // 找到最大宽高作为统一尺寸（对裁剪后矩阵）
+    let uniW = 0, uniH = 0;
+    for (const c of rawChars) {
+      if (c.cropW > uniW) uniW = c.cropW;
+      if (c.cropH > uniH) uniH = c.cropH;
+    }
+
+    // 将所有字符的裁剪后矩阵填充到统一尺寸，保存为原始数据
+    _rawChars = rawChars.map(c => {
+      const padMatrix = padMatrixToSize(c.cropMatrix, uniW, uniH);
+      return { char: c.char, matrix: padMatrix, width: uniW, height: uniH };
+    });
+
+    // 从原始数据 + 边距/偏移构建显示矩阵
+    const chars = _rawChars.map(c => {
+      const m = applyPadding(c.matrix, c.width, c.height);
+      const h = m.length, w = m[0].length;
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      for (let r = 0; r < h; r++)
+        for (let col = 0; col < w; col++)
+          if (m[r][col]) { ctx.fillStyle = '#000'; ctx.fillRect(col, r, 1, 1); }
+      return { ...c, matrix: m, width: w, height: h, tempCanvas: cv };
+    });
+
+    // ---- 渲染点阵预览 ----
+    renderBitmapPreview(chars, cellSize);
+
+    renderRawPreview(chars);
+  }
+
+  // ---- 渲染原始采样参考 ----
+  function renderRawPreview(chars) {
+    if (!chars || chars.length === 0) return;
+    const uniW = chars[0].width, uniH = chars[0].height;
+    const rawGap = 8;
+    const rawPerRow = 10;
+    const rawRows = Math.ceil(chars.length / rawPerRow);
+    const rawRowW = rawGap + Math.min(chars.length, rawPerRow) * (uniW + rawGap);
+    const rawRowH = uniH + 16;
+    rawCanvas.width = rawRowW;
+    rawCanvas.height = rawRows * rawRowH + rawGap;
+    rawCtx.fillStyle = themeColor('bg');
+    rawCtx.fillRect(0, 0, rawCanvas.width, rawCanvas.height);
+    for (let i = 0; i < chars.length; i++) {
+      const c = chars[i];
+      const row = Math.floor(i / rawPerRow);
+      const col = i % rawPerRow;
+      const rawX = rawGap + col * (uniW + rawGap);
+      const rawY = rawGap + row * rawRowH;
+      rawCtx.fillStyle = '#ffffff';
+      rawCtx.fillRect(rawX, rawY, uniW, uniH);
+      rawCtx.drawImage(c.tempCanvas, rawX, rawY);
+      rawCtx.fillStyle = themeColor('accent');
+      rawCtx.font = '10px sans-serif';
+      rawCtx.textAlign = 'center';
+      rawCtx.fillText(c.char, rawX + uniW / 2, rawY + uniH + 12);
+    }
+  }
+
+  // ---- 渲染点阵预览（从已有矩阵绘制）- 供手动编辑后调用 ----
+  window.renderBitmapPreview = function(chars, cellSize) {
+    const gap = 16;
+    const bitmapPerRow = 10;
+
+    window._bitmapChars = chars;
+    window._bitmapCharRects = [];
+    window._bitmapCellSize = cellSize;
+
+    const charW = chars[0].width * cellSize;
+    const charH = chars[0].height * cellSize + 18;
+    const rows = Math.ceil(chars.length / bitmapPerRow);
+    const canvasW = Math.min(chars.length, bitmapPerRow) * (charW + gap) + gap;
+    const canvasH = rows * charH + gap;
+
+    bitmapCanvas.width = canvasW;
+    bitmapCanvas.height = canvasH;
+    bitmapCtx.fillStyle = themeColor('bg');
+    bitmapCtx.fillRect(0, 0, canvasW, canvasH);
+
+    let totalFg = 0, totalBg = 0;
+    for (let i = 0; i < chars.length; i++) {
+      const c = chars[i];
+      const row = Math.floor(i / bitmapPerRow);
+      const col = i % bitmapPerRow;
+      const x = gap + col * (charW + gap);
+      const y = gap + row * charH;
+      renderSingleBitmap(bitmapCtx, c.matrix, cellSize, x, y, c.char);
+      window._bitmapCharRects.push({ x, y, w: c.width * cellSize, h: c.height * cellSize, idx: i });
+      const fgCount = c.matrix.reduce((s, r) => s + r.reduce((a, v) => a + v, 0), 0);
+      totalFg += fgCount; totalBg += (c.width * c.height) - fgCount;
+    }
+    bitmapDims.textContent = `根据最大字符计算点阵：${chars[0].width}×${chars[0].height}`;
+    updateExport();
+  }
+
+  // ---- 点阵画布鼠标点击编辑 ----
+  bitmapCanvas.addEventListener('click', function(e) {
+    const rect = this.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const scaleX = this.width / rect.width;
+    const scaleY = this.height / rect.height;
+    const px = mx * scaleX;
+    const py = my * scaleY;
+    const charRects = window._bitmapCharRects || [];
+    const chars = window._bitmapChars || [];
+    const cs = window._bitmapCellSize || 4;
+    for (const cr of charRects) {
+      if (px >= cr.x && px < cr.x + cr.w && py >= cr.y && py < cr.y + cr.h) {
+        const col = Math.floor((px - cr.x) / cs);
+        const row = Math.floor((py - cr.y) / cs);
+        if (row >= 0 && row < chars[cr.idx].matrix.length && col >= 0 && col < chars[cr.idx].matrix[0].length) {
+          chars[cr.idx].matrix[row][col] = e.button === 2 ? 0 : 1;
+          // 保存手动编辑（转换为原始裁剪矩阵坐标，跟随边距偏移移动）
+          const pt = parseInt(paddingTop.value) || 0;
+          const pl = parseInt(paddingLeft.value) || 0;
+          const ox = parseInt(offsetX.value) || 0;
+          const oy = parseInt(offsetY.value) || 0;
+          const val = e.button === 2 ? 0 : 1;
+          _editDeltas.push({ charIdx: cr.idx, row: row - pt + oy, col: col - pl + ox, val: val });
+          window.renderBitmapPreview(chars, window._bitmapCellSize);
+        }
+        break;
+      }
+    }
+  });
+  bitmapCanvas.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    // 模拟右键点击以触发 toggle
+    const clickEvent = new MouseEvent('click', { clientX: e.clientX, clientY: e.clientY, button: 2 });
+    this.dispatchEvent(clickEvent);
+  });
+
+  // ---- 查询本地字库 ---- 
+  // 检测优先级: Electron IPC > Local Font Access API > Canvas
+  function isLocalFontAPIAvailable() {
+    return 'queryLocalFonts' in navigator;
+  }
+
+  function isElectronEnv() {
+    return typeof window !== 'undefined' && window.electronFonts && window.electronFonts.isElectron;
+  }
+
+  async function listLocalFonts() {
+    localFontsGroup.style.display = 'flex';
+
+    // 1. Electron 环境 - 通过 Node.js font-list 包获取全部字体
+    if (isElectronEnv()) {
+      localFontList.innerHTML = '<div class="font-loading">⏳ 正在通过 Electron 获取系统全部字体...</div>';
+      try {
+        const fonts = await window.electronFonts.getFonts();
+        if (fonts && fonts.length > 0) {
+          allFontsData = fonts.map(f => ({
+            family: f,
+            styles: 'System',
+            postscriptName: f,
+            source: 'electron'
+          }));
+          renderFontList(allFontsData);
+          return;
+        }
+      } catch (err) {
+        console.warn('Electron 字体获取失败, 回退 Canvas:', err);
+      }
+    }
+
+    // 2. Local Font Access API
+    if (isLocalFontAPIAvailable()) {
+      localFontList.innerHTML = '<div class="font-loading">⏳ 正在查询本地字库...</div>';
+      try {
+        const fonts = await navigator.fonts.queryLocalFonts();
+        const fontMap = new Map();
+        for (const font of fonts) {
+          if (!fontMap.has(font.family)) fontMap.set(font.family, []);
+          fontMap.get(font.family).push(font);
+        }
+        allFontsData = [];
+        for (const [family, items] of fontMap) {
+          allFontsData.push({
+            family,
+            styles: items.map(f => f.style || 'Regular').join(', '),
+            postscriptName: items[0].postscriptName,
+            sample: items[0]
+          });
+        }
+        allFontsData.sort((a, b) => a.family.localeCompare(b.family, 'zh-CN'));
+        renderFontList(allFontsData);
+        return;
+      } catch (err) {
+        localFontList.innerHTML = `<div class="font-error">⚠ ${err.message}</div>`;
+        return;
+      }
+    }
+
+    // 3. Canvas 回退不可用
+    localFontList.innerHTML = '<div class="font-error">⚠ 当前环境无法获取本地字体列表（需要 Electron 或 Local Font Access API）</div>';
+  }
+
+  function renderFontList(fonts) {
+    fontCount.textContent = `共 ${fonts.length} 种字体`;
+    let html = '';
+    for (const font of fonts) {
+      const isActive = (loadedFontFamily === 'local_' + font.family);
+      html += `<div class="font-item ${isActive ? 'active' : ''}" data-family="${font.family.replace(/"/g, '&quot;')}">
+        <span class="font-family">${font.family}</span>
+        <span class="font-style">${font.styles}</span>
+      </div>`;
+    }
+    localFontList.innerHTML = html;
+
+    // 点击选择字体
+    localFontList.querySelectorAll('.font-item').forEach(el => {
+      el.addEventListener('click', async function() {
+        const familyName = this.dataset.family;
+        await loadLocalFont(familyName);
+      });
+    });
+
+    // 字体首字符快捷按钮（点击筛选）
+    let shortcutHtml = '';
+    const seen = new Set();
+    for (const font of fonts) {
+      const firstChar = font.family.charAt(0);
+      if (!firstChar || seen.has(firstChar)) continue;
+      seen.add(firstChar);
+      shortcutHtml += `<button class="btn btn-shortcut" data-char="${firstChar}">${firstChar}</button>`;
+    }
+    fontShortcuts.innerHTML = shortcutHtml;
+    const firstBtn = fontShortcuts.querySelector('.btn-shortcut');
+    if (firstBtn) firstBtn.classList.add('active');
+    fontShortcuts.querySelectorAll('.btn-shortcut').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const ch = this.dataset.char;
+        fontShortcuts.querySelectorAll('.btn-shortcut').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filtered = allFontsData.filter(f => f.family.charAt(0) === ch);
+        renderFilteredFontList(filtered);
+      });
+    });
+    // 默认筛选第一个字母
+    if (firstBtn) firstBtn.click();
+  }
+
+  function renderFilteredFontList(fonts) {
+    fontCount.textContent = '共 ' + fonts.length + ' 种字体';
+    let html = '';
+    for (const font of fonts) {
+      const isActive = (loadedFontFamily === 'local_' + font.family);
+      html += '<div class="font-item ' + (isActive ? 'active' : '') + '" data-family="' + font.family.replace(/"/g, '&quot;') + '">' +
+        '<span class="font-family">' + font.family + '</span>' +
+        '<span class="font-style">' + font.styles + '</span></div>';
+    }
+    localFontList.innerHTML = html;
+    localFontList.querySelectorAll('.font-item').forEach(el => {
+      el.addEventListener('click', async function() {
+        const familyName = this.dataset.family;
+        await loadLocalFont(familyName);
+      });
+    });
+  }
+
+  // ---- 字体检测 - 全量字体 + 双模式检测 ---- 
+
+  async function loadLocalFont(familyName) {
+    // 查找该字体数据
+    const fontData = allFontsData.find(f => f.family === familyName);
+    if (!fontData) return;
+
+    const localFamily = 'local_' + familyName;
+
+    // 判断是否来自 Canvas 检测 (无 sample.blob)
+    const isCanvasDetected = fontData.source === 'canvas-detect' || !fontData.sample || typeof fontData.sample.blob !== 'function';
+
+    try {
+      if (!isCanvasDetected) {
+        // 来自 Local Font Access API: 用 blob() 加载
+        const blob = await fontData.sample.blob();
+        const url = URL.createObjectURL(blob);
+        const fontFace = new FontFace(localFamily, `url(${url})`);
+        await fontFace.load();
+        document.fonts.add(fontFace);
+        await document.fonts.ready;
+
+        if (loadedFontUrl) URL.revokeObjectURL(loadedFontUrl);
+        loadedFontFamily = localFamily;
+        loadedFontUrl    = url;
+      } else {
+        // Electron / Canvas 检测: 尝试 local() 加载, 失败则直接用系统字体名
+        try {
+          const fontFace = new FontFace(localFamily, `local("${familyName}")`);
+          await fontFace.load();
+          document.fonts.add(fontFace);
+          await document.fonts.ready;
+          if (loadedFontUrl) URL.revokeObjectURL(loadedFontUrl);
+          loadedFontFamily = localFamily;
+          loadedFontUrl    = null;
+        } catch (e) {
+          // local() 加载失败, 直接用系统字体名称渲染 (Canvas 可直接使用)
+          if (loadedFontUrl) URL.revokeObjectURL(loadedFontUrl);
+          loadedFontFamily = familyName;
+          loadedFontUrl    = null;
+        }
+      }
+
+      loadedFontName   = familyName;
+      fontName.innerHTML = `已加载: <strong style="color:#43e97b">${familyName}</strong>`;
+      fontFileInput.value = '';
+
+      // 更新高亮
+      localFontList.querySelectorAll('.font-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.family === familyName);
+      });
+      fontShortcuts.querySelectorAll('.btn-shortcut').forEach(el => {
+        el.classList.toggle('active', el.dataset.family === familyName);
+      });
+
+      scheduleRender();
+    } catch (err) {
+      fontName.innerHTML = `❌ 字体加载失败: ${err.message}`;
+    }
+  }
+
+  // ---- 防抖渲染 ----
+  const scheduleRender = debounce(fullRender, 150);
+
+  // ---- 事件监听 ----
+  fontFileInput.addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const family = 'custom_' + Date.now();
+      const url = URL.createObjectURL(file);
+      const fontFace = new FontFace(family, `url(${url})`);
+      await fontFace.load();
+      document.fonts.add(fontFace);
+      await document.fonts.ready;
+
+      if (loadedFontUrl) URL.revokeObjectURL(loadedFontUrl);
+      loadedFontFamily = family;
+      loadedFontUrl    = url;
+      loadedFontName   = file.name;
+      fontName.innerHTML = `已加载: <strong style="color:#43e97b">${file.name}</strong>`;
+      scheduleRender();
+    } catch (err) {
+      fontName.innerHTML = `❌ 字体加载失败: ${err.message}`;
+    }
+  });
+
+  fontSizeSlider.addEventListener('input', () => {
+    fontSizeDisplay.textContent = fontSizeSlider.value;
+    const val = parseInt(fontSizeSlider.value);
+    document.querySelectorAll('.btn-shortcut[data-size]').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.size) === val);
+    });
+    scheduleRender();
+  });
+  cellSizeSlider.addEventListener('input', () => {
+    cellSizeDisplay.textContent = cellSizeSlider.value;
+    const val = parseInt(cellSizeSlider.value);
+    document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.cell) === val);
+    });
+    scheduleRender();
+  });
+  thresholdSlider.addEventListener('input', () => {
+    thresholdInput.value = thresholdSlider.value;
+    scheduleRender();
+  });
+  thresholdInput.addEventListener('input', () => {
+    let v = parseInt(thresholdInput.value);
+    if (isNaN(v)) v = 180;
+    v = Math.max(1, Math.min(255, v));
+    thresholdSlider.value = v;
+    thresholdInput.value = v;
+    scheduleRender();
+  });
+
+  // ---- 字体大小快捷按钮 ----
+  document.querySelectorAll('.btn-shortcut[data-size]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const size = parseInt(this.dataset.size);
+      fontSizeSlider.value = size;
+      fontSizeDisplay.textContent = size;
+      document.querySelectorAll('.btn-shortcut[data-size]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      scheduleRender();
+    });
+  });
+
+  // ---- 边距步进按钮 ----
+  document.querySelectorAll('.stepper-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = this.dataset.target;
+      const step = parseInt(this.dataset.step);
+      const input = document.getElementById(targetId);
+      let val = parseInt(input.value) || 0;
+      const min = parseInt(input.min) || -Infinity;
+      const max = parseInt(input.max) || Infinity;
+      val = Math.max(min, Math.min(max, val + step));
+      input.value = val;
+      if (targetId === 'offsetX' || targetId === 'offsetY') updateOffsetDisplay();
+      if (targetId === 'fontSize') {
+        fontSizeDisplay.textContent = val;
+        document.querySelectorAll('.btn-shortcut[data-size]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.size) === val));
+      }
+      if (targetId === 'cellSize') {
+        cellSizeDisplay.textContent = val;
+        document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cell) === val));
+      }
+      if (targetId === 'threshold') thresholdInput.value = val;
+      scheduleRender();
+    });
+  });
+
+  // ---- 点阵单元快捷按钮 ----
+  document.querySelectorAll('.btn-shortcut[data-cell]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const size = parseInt(this.dataset.cell);
+      cellSizeSlider.value = size;
+      cellSizeDisplay.textContent = size;
+      document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      scheduleRender();
+    });
+  });
+
+  function onOffsetChange() { if (updateOffsetDisplay) updateOffsetDisplay(); scheduleRender(); }
+  [paddingTop, paddingBottom, paddingLeft, paddingRight, offsetX, offsetY].forEach(el => {
+    el.addEventListener('input', onOffsetChange);
+    el.addEventListener('change', onOffsetChange);
+  });
+  inputText.addEventListener('input', scheduleRender);
+  yinYangSelect.addEventListener('change', scheduleRender);
+  arrayDimSelect.addEventListener('change', updateExport);
+  langSelect.addEventListener('change', updateExport);
+
+  copyBtn.addEventListener('click', copyExport);
+  saveBtn.addEventListener('click', saveExport);
+
+  // ---- 本地字库事件 ----
+
+  async function loadLocalFontByName(familyName) {
+    const localFamily = 'local_' + familyName;
+    try {
+      const fontFace = new FontFace(localFamily, `local("${familyName}")`);
+      await fontFace.load();
+      document.fonts.add(fontFace);
+      await document.fonts.ready;
+
+      if (loadedFontUrl) URL.revokeObjectURL(loadedFontUrl);
+      loadedFontFamily = localFamily;
+      loadedFontUrl    = null;
+      loadedFontName   = familyName;
+      fontName.innerHTML = `已加载: <strong style="color:#43e97b">${familyName}</strong>`;
+      fontFileInput.value = '';
+
+      // 添加到字体列表
+      if (!allFontsData.some(f => f.family === familyName)) {
+        allFontsData.push({ family: familyName, styles: '手动添加', postscriptName: familyName, source: 'manual' });
+        allFontsData.sort((a, b) => a.family.localeCompare(b.family, 'zh-CN'));
+        renderFontList(allFontsData);
+      } else {
+        localFontList.querySelectorAll('.font-item').forEach(el => {
+          el.classList.toggle('active', el.dataset.family === familyName);
+        });
+      }
+
+      scheduleRender();
+    } catch (err) {
+      fontName.innerHTML = `❌ 字体加载失败: ${err.message}`;
+    }
+  }
+
+  // ---- 导出格式 (逐字) ----
+  function generateExport() {
+    const text = inputText.value || ' ';
+    const fontSize = parseFloat(fontSizeSlider.value);
+    const thresholdVal = parseInt(thresholdSlider.value);
+    const cellSize = parseInt(cellSizeSlider.value);
+    const format = 'carray';
+
+    // 优先使用当前显示的矩阵（含手动编辑），否则重新计算
+    let chars, uniW, uniH;
+    if (window._bitmapChars && window._bitmapChars.length > 0) {
+      chars = window._bitmapChars.map(c => ({
+        char: c.char,
+        matrix: c.matrix.map(r => [...r]),
+        width: c.width, height: c.height
+      }));
+      uniW = chars[0].width; uniH = chars[0].height;
+    } else {
+      const rawChars = [];
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '\n' || ch === '\r') continue;
+        const result = getBitmapMatrix(ch, fontSize, thresholdVal);
+        rawChars.push({ char: ch, ...result });
+      }
+      if (rawChars.length === 0) {
+        const result = getBitmapMatrix(' ', fontSize, thresholdVal);
+        rawChars.push({ char: ' ', ...result });
+      }
+      uniW = 0; uniH = 0;
+      for (const c of rawChars) { if (c.width > uniW) uniW = c.width; if (c.height > uniH) uniH = c.height; }
+      chars = rawChars.map(c => ({ ...c, matrix: padMatrixToSize(c.matrix, uniW, uniH), width: uniW, height: uniH }));
+    }
+
+    const dimName = { '1d': '字节压缩', '2d': '逐位展开' }[arrayDimSelect.value] || '字节压缩';
+    const langName = langSelect.options[langSelect.selectedIndex].text;
+    const bytesPerChar = Math.ceil(uniW / 8) * uniH;
+    const totalBytes = bytesPerChar * chars.length;
+    let output = `// 点阵数据 - 文本: "${text}" (共${chars.length}字)\n`;
+    output += `// 字体: "${loadedFontName}", 大小: ${fontSize}px, 阈值: ${thresholdVal}\n`;
+    output += `// 统一点阵尺寸: ${uniW} × ${uniH}\n`;
+    output += `// 边距(T/B/L/R): ${paddingTop.value}/${paddingBottom.value}/${paddingLeft.value}/${paddingRight.value}\n`;
+    output += `// 偏移(X/Y): ${offsetX.value}/${offsetY.value}\n`;
+    output += `// 阴阳码: ${yinYangSelect.value === 'yin' ? '阴码(0=前景)' : '阳码(1=前景)'}\n`;
+    output += `// 输出格式: ${dimName}, 语言: ${langName}\n`;
+    output += `// 单字大小: ${bytesPerChar} 字节, 总计: ${totalBytes} 字节\n\n`;
+
+    for (let ci = 0; ci < chars.length; ci++) {
+      const c = chars[ci];
+      const { matrix, width, height } = c;
+
+      const charBytes = Math.ceil(width / 8) * height;
+      output += `// ===== 字 ${ci+1}: "${c.char}" (${width}×${height}, ${charBytes}B) =====\n`;
+
+      switch (format) {
+        case 'binary': {
+          for (let row = 0; row < height; row++) {
+            let line = '';
+            for (let col = 0; col < width; col++) {
+              line += matrix[row][col] === 1 ? '██' : '  ';
+            }
+            output += line + '\n';
+          }
+          output += '\n';
+          break;
+        }
+        case 'hex': {
+          for (let row = 0; row < height; row++) {
+            const parts = [];
+            const bytes = Math.ceil(width / 8);
+            for (let b = 0; b < bytes; b++) {
+              let byteVal = 0;
+              const startBit = b * 8;
+              for (let bit = 0; bit < 8; bit++) {
+                const colIdx = startBit + bit;
+                if (colIdx < width && matrix[row][colIdx] === 1) {
+                  byteVal |= (1 << (7 - bit));
+                }
+              }
+              parts.push(byteVal.toString(16).toUpperCase().padStart(2, '0'));
+            }
+            output += parts.join(' ') + '\n';
+          }
+          output += '\n';
+          break;
+        }
+        case 'carray': {
+          const dimMode = arrayDimSelect.value;
+          const lang = langSelect.value;
+
+          // ---- 语言语法配置 ----
+          const langDefs = {
+            'c':       { type: 'const unsigned char', eq: '=', braceS: '{', braceE: '}', semi: ';', suffix: '' },
+            'arduino': { type: 'const uint8_t',        eq: '=', braceS: '{', braceE: '}', semi: ';', suffix: ' PROGMEM' },
+            'python':  { type: '',                     eq: '=', braceS: '[', braceE: ']', semi: '',  suffix: '' },
+            'go':      { type: 'var',                  eq: '=', braceS: '{', braceE: '}', semi: '',  suffix: '' },
+            'rust':    { type: 'const',                eq: '=', braceS: '{', braceE: '}', semi: ',', suffix: '' },
+            'java':    { type: 'static final byte[]',  eq: '=', braceS: '{', braceE: '}', semi: ';', suffix: '' },
+            'csharp':  { type: 'static readonly byte[]',eq: '=', braceS: '{', braceE: '}', semi: ';', suffix: '' },
+            'js':      { type: 'const',                eq: '=', braceS: '[', braceE: ']', semi: ',', suffix: '' }
+          };
+          const L = langDefs[lang] || langDefs.c;
+
+          function carHeader(name, dim) {
+            if (lang === 'python') return `${name} = [\n`;
+            if (lang === 'go') return `${L.type} ${name} = [${dim}]byte {\n`;
+            if (lang === 'rust') return `${L.type} ${name.toUpperCase()}: [[u8; ${dim.split('][')[1]}]; ${dim.split('][')[0]}] ${L.eq} {\n`;
+            if (lang === 'java') return `${L.type} ${name} = {\n`;
+            if (lang === 'csharp') return `${L.type} ${name} = {\n`;
+            if (lang === 'js') return `${L.type} ${name} = [\n`;
+            return `${L.type} ${name}[${dim}]${L.suffix} ${L.eq} {\n`;
+          }
+          function carFooter() {
+            if (lang === 'python' || lang === 'js') return `${L.braceE}${L.semi}\n\n`;
+            return `${L.braceE}${L.semi}\n\n`;
+          }
+          function carHex(v) {
+            if (lang === 'python') return String(v);
+            return '0x' + v.toString(16).toUpperCase().padStart(2, '0');
+          }
+          function carRow(arr, last) {
+            if (lang === 'python') return '    [' + arr.join(', ') + ']' + (last ? '' : ',');
+            if (lang === 'go')     return '  {' + arr.join(', ') + '},';
+            if (lang === 'js')     return '  [' + arr.join(', ') + ']' + (last ? '' : ',');
+            if (lang === 'rust')   return '  [' + arr.join(', ') + '],';
+            return '  {' + arr.join(', ') + '}' + (last ? '' : ',');
+          }
+
+          const bytesPerRow = Math.ceil(width / 8);
+          const name = `char${ci}`;
+
+          if (dimMode === '2d') {
+            // 逐位展开
+            output += carHeader(name, `${height}][${width}`);
+            for (let r = 0; r < height; r++) {
+              const vals = [];
+              for (let c = 0; c < width; c++) vals.push(lang === 'python' ? matrix[r][c] : matrix[r][c]);
+              output += carRow(vals, r === height - 1) + '\n';
+            }
+            output += carFooter();
+          } else {
+            // 字节压缩 / 字节展开
+            output += carHeader(name, `${height}][${bytesPerRow}`);
+            for (let r = 0; r < height; r++) {
+              const byteVals = [];
+              for (let b = 0; b < bytesPerRow; b++) {
+                let v = 0;
+                for (let bit = 0; bit < 8; bit++) {
+                  const col = b * 8 + bit;
+                  if (col < width && matrix[r][col] === 1) v |= (1 << (7 - bit));
+                }
+                byteVals.push(carHex(v));
+              }
+              output += carRow(byteVals, r === height - 1) + '\n';
+            }
+            output += carFooter();
+          }
+          break;
+        }
+        case 'carray2d': {
+          // 始终二维逐位展开
+          output += `const unsigned char char${ci}[${height}][${width}] = {\n`;
+          for (let row = 0; row < height; row++) {
+            output += '  {';
+            const vals = [];
+            for (let col = 0; col < width; col++) {
+              vals.push(matrix[row][col]);
+            }
+            output += vals.join(', ');
+            output += row < height - 1 ? '},\n' : '}\n';
+          }
+          output += '};\n\n';
+          break;
+        }
+        case 'python': {
+          output += `# char "${c.char}" ${width}x${height}\n`;
+          output += `char${ci} = [\n`;
+          for (let row = 0; row < height; row++) {
+            output += '    [';
+            const vals = [];
+            for (let col = 0; col < width; col++) {
+              vals.push(matrix[row][col]);
+            }
+            output += vals.join(', ');
+            output += row < height - 1 ? '],\n' : ']\n';
+          }
+          output += ']\n\n';
+          break;
+        }
+        case 'csv': {
+          const headers = [];
+          for (let col = 0; col < width; col++) headers.push(`C${col}`);
+          output += `# char "${c.char}" ${width}x${height}\n`;
+          output += headers.join(',') + '\n';
+          for (let row = 0; row < height; row++) {
+            output += matrix[row].join(',') + '\n';
+          }
+          output += '\n';
+          break;
+        }
+        case 'json': {
+          if (ci === 0) {
+            output = JSON.stringify({
+              text: text,
+              fontSize: fontSize,
+              threshold: thresholdVal,
+              cellSize: cellSize,
+              unifiedSize: { width: uniW, height: uniH },
+              padding: { top: parseInt(paddingTop.value), bottom: parseInt(paddingBottom.value), left: parseInt(paddingLeft.value), right: parseInt(paddingRight.value) },
+              offset: { x: parseInt(offsetX.value), y: parseInt(offsetY.value) },
+              chars: chars.map((ch, idx) => ({
+                index: idx,
+                char: ch.char,
+                matrix: ch.matrix
+              }))
+            }, null, 2);
+          }
+          break;
+        }
+      }
+    }
+
+    return output;
+  }
+
+  function updateExport() {
+    try {
+      exportOutput.value = generateExport();
+    } catch (e) {
+      exportOutput.value = `// 生成导出数据时出错: ${e.message}`;
+    }
+  }
+
+  // ---- 复制导出 ----
+  async function copyExport() {
+    try {
+      await navigator.clipboard.writeText(exportOutput.value);
+      const orig = copyBtn.textContent;
+      copyBtn.textContent = '✅ 已复制!';
+      setTimeout(() => copyBtn.textContent = orig, 1500);
+    } catch {
+      // fallback
+      exportOutput.select();
+      document.execCommand('copy');
+    }
+  }
+
+  // ---- 保存为文件 ----
+  function saveExport() {
+    const extMap = { 'c':'c', 'arduino':'h', 'python':'py', 'go':'go', 'rust':'rs', 'java':'java', 'csharp':'cs', 'js':'js' };
+    const ext = extMap[langSelect.value] || 'c';
+    const content = exportOutput.value;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bitmap_export.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ---- 首次渲染 ----
+  fullRender();
+
+  // ---- 自动加载本地字库 ----
+  // Electron 环境通过 font-list 扫描；浏览器降级提示
+  setTimeout(() => {
+    listLocalFonts();
+  }, 300);
+
+  // ============================================================
+  //  主题系统
+  // ============================================================
+  const THEMES = {
+    'mono':    { bg:'#121212', text:'#eeeeee', accent:'#bbbbbb', comment:'#888888', raised:'#1e1e1e', border:'#333333', danger:'#ff5252', success:'#69f0ae', label:'黑白灰' },
+    'dark':    { bg:'#0d1117', text:'#e6edf3', accent:'#58a6ff', comment:'#8b949e', raised:'#161b22', border:'#21262d', danger:'#f85149', success:'#3fb950', label:'暗色经典' },
+    'ocean':   { bg:'#0a1929', text:'#e3f2fd', accent:'#64b5f6', comment:'#90a4ae', raised:'#0d2137', border:'#1a3a5c', danger:'#ef5350', success:'#66bb6a', label:'深海蓝' },
+    'forest':  { bg:'#0f1a10', text:'#e8f5e9', accent:'#81c784', comment:'#a5b5a5', raised:'#1a2b1c', border:'#2d4a30', danger:'#e57373', success:'#4caf50', label:'森林绿' },
+    'sunset':  { bg:'#1a1015', text:'#fce4ec', accent:'#f48fb1', comment:'#b0a0a8', raised:'#2a1a20', border:'#4a2a35', danger:'#ef5350', success:'#81c784', label:'日落粉' },
+    'light':   { bg:'#ffffff', text:'#1f2328', accent:'#0969da', comment:'#656d76', raised:'#f6f8fa', border:'#d0d7de', danger:'#cf222e', success:'#1a7f37', label:'浅色' },
+    'lavender':{ bg:'#1a1a2e', text:'#e8e0f0', accent:'#c084fc', comment:'#a896c0', raised:'#252540', border:'#3a3a5c', danger:'#f87171', success:'#86efac', label:'薰衣草紫' },
+    'amber':   { bg:'#1a1410', text:'#fef3c7', accent:'#fbbf24', comment:'#b89b6a', raised:'#2a2018', border:'#4a3828', danger:'#f87171', success:'#86efac', label:'琥珀金' },
+    'nord':    { bg:'#2e3440', text:'#eceff4', accent:'#88c0d0', comment:'#81a1c1', raised:'#3b4252', border:'#4c566a', danger:'#bf616a', success:'#a3be8c', label:'北欧极光' },
+    'coffee':  { bg:'#1c1613', text:'#e8d5c4', accent:'#c7956d', comment:'#a08a78', raised:'#2a221d', border:'#3d322b', danger:'#e57373', success:'#81c784', label:'咖啡棕' },
+    'midnight':{ bg:'#000022', text:'#c8d6e5', accent:'#00b8ff', comment:'#7f8fa6', raised:'#0a0a3a', border:'#1a1a5a', danger:'#ff6b6b', success:'#2ed573', label:'午夜蓝' },
+    'cherry':  { bg:'#1a0a0a', text:'#ffd6d6', accent:'#ff6b6b', comment:'#cc8888', raised:'#2d1414', border:'#4d2424', danger:'#ff4757', success:'#7bed9f', label:'樱桃红' },
+    'mint':    { bg:'#0a1a14', text:'#e0f5ec', accent:'#2ed573', comment:'#80b8a0', raised:'#14281e', border:'#244030', danger:'#ff6b6b', success:'#7bed9f', label:'薄荷绿' },
+    'sakura':  { bg:'#1e141a', text:'#fce4ec', accent:'#f06292', comment:'#ba9aa8', raised:'#2a1a24', border:'#4a2a3a', danger:'#e57373', success:'#81c784', label:'樱花粉' },
+    'dracula': { bg:'#282a36', text:'#f8f8f2', accent:'#bd93f9', comment:'#6272a4', raised:'#44475a', border:'#555770', danger:'#ff5555', success:'#50fa7b', label:'德古拉紫' },
+  };
+  let currentTheme = localStorage.getItem('fontbitmap_theme') || 'mono';
+
+  function applyTheme(name) {
+    const t = THEMES[name];
+    if (!t) return;
+    currentTheme = name;
+    let css = ':root{';
+    for (const k of ['bg','text','accent','comment','raised','border','danger','success']) {
+      css += '--' + k + ':' + t[k] + ';';
+    }
+    css += '}';
+    let el = document.getElementById('_themeStyle');
+    if (!el) { el = document.createElement('style'); el.id = '_themeStyle'; document.head.appendChild(el); }
+    el.textContent = css;
+    localStorage.setItem('fontbitmap_theme', name);
+    if (typeof fullRender === 'function') fullRender();
+  }
+
+  function showThemeModal() {
+    const names = Object.keys(THEMES);
+    const html = names.map(n => {
+      const th = THEMES[n];
+      return '<div class="theme-option' + (n === currentTheme ? ' theme-selected' : '') + '" data-theme="' + n + '">'
+        + '<div class="theme-swatches">'
+        + ['bg','accent','comment','raised','border'].map(c => '<span style="background:' + th[c] + '"></span>').join('')
+        + '</div>'
+        + '<span>' + th.label + '</span>'
+        + '</div>';
+    }).join('');
+    modal.title.textContent = '选择主题配色';
+    modal.body.innerHTML = '<div class="theme-grid">' + html + '</div>';
+    modal.footer.innerHTML = '';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn btn-primary';
+    closeBtn.textContent = '关闭';
+    closeBtn.onclick = closeModal;
+    modal.footer.appendChild(closeBtn);
+    modal.overlay.classList.add('open');
+    setTimeout(() => {
+      document.querySelectorAll('.theme-option').forEach(el => {
+        el.addEventListener('click', () => {
+          const name = el.dataset.theme;
+          applyTheme(name);
+          closeModal();
+        });
+      });
+    }, 50);
+  }
+
+  // 模态弹窗 DOM
+  const modal = {
+    overlay: document.getElementById('modalOverlay'),
+    box: document.getElementById('modalBox'),
+    title: document.getElementById('modalTitle'),
+    body: document.getElementById('modalBody'),
+    footer: document.getElementById('modalFooter'),
+  };
+  function closeModal() { modal.overlay.classList.remove('open'); }
+  modal.overlay.addEventListener('click', (e) => { if (e.target === modal.overlay) closeModal(); });
+
+  // 主题按钮
+  document.getElementById('themeBtn').addEventListener('click', showThemeModal);
+
+  // 启动时应用已保存的主题
+  applyTheme(currentTheme);
+
+  // ---- 窗口 resize 不重绘, 但加个稳妥启动 ----
+  console.log('字库点阵提取工具已启动');
+})();
+</script>
+</body>
+</html>

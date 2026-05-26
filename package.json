@@ -1,0 +1,47 @@
+{
+  "name": "font-bitmap-extractor",
+  "version": "1.0.0",
+  "description": "本地字库点阵提取工具 - 桌面版",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist-portable": "electron-builder --win portable"
+  },
+  "dependencies": {
+    "font-list": "^2.1.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.fontbitmap.extractor",
+    "productName": "字库点阵提取工具",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "main.js",
+      "preload.js",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "字库点阵提取工具_便携版.exe"
+    }
+  }
+}
