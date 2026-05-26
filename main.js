@@ -29,7 +29,7 @@ function createWindow() {
     }
   });
 
-  win.loadFile('index.html');
+  win.loadFile('Font Bitmap Extractor.html');
   // 开发时取消注释打开 DevTools
   // win.webContents.openDevTools();
 }
