@@ -2,4 +2,5 @@
 Desktop version: Font Bitmap Extractor.rar
 
 Web version: Font Bitmap Extractor.HTML
+
 (The web version cannot directly open local fonts; they need to be imported manually.)
