@@ -8,6 +8,6 @@ npx electron-builder --win portable --config.win.signAndEditExecutable=false
 echo.
 echo ========================================
 echo   Build complete!
-echo   Output: dist\字库点阵提取工具_便携版.exe
+echo   Output: dist\Font Bitmap Extractor_Portable.exe
 echo ========================================
 pause

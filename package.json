@@ -1,7 +1,7 @@
 {
   "name": "font-bitmap-extractor",
   "version": "1.0.0",
-  "description": "本地字库点阵提取工具 - 桌面版",
+  "description": "Font Bitmap Extractor - Desktop App",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -18,7 +18,7 @@
   },
   "build": {
     "appId": "com.fontbitmap.extractor",
-    "productName": "字库点阵提取工具",
+    "productName": "Font Bitmap Extractor",
     "directories": {
       "output": "dist"
     },
@@ -41,7 +41,7 @@
       "allowToChangeInstallationDirectory": true
     },
     "portable": {
-      "artifactName": "字库点阵提取工具_便携版.exe"
+      "artifactName": "${productName}_Portable.exe"
     }
   }
 }
