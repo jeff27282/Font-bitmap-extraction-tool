@@ -359,6 +359,16 @@
     background: var(--border);
     border-color: var(--accent);
   }
+  .padding-display {
+    display:inline-block;
+    width:52px;
+    padding:3px 2px;
+    font-size:12px;
+    font-weight:bold;
+    color:var(--accent);
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
   .padding-input {
     width: 100%;
     padding: 6px 4px;
@@ -544,21 +554,16 @@
         <button class="btn btn-shortcut" data-size="80">80</button>
         <button class="btn btn-shortcut" data-size="88">88</button>
         <button class="btn btn-shortcut" data-size="96">96</button>
-        <button class="btn btn-shortcut" data-size="104">104</button>
-        <button class="btn btn-shortcut" data-size="112">112</button>
-        <button class="btn btn-shortcut" data-size="120">120</button>
-        <button class="btn btn-shortcut" data-size="128">128</button>
       </div>
     </div>
 
     <!-- 阈值 -->
     <div class="control-group">
-      <label data-i18n="threshold">二值化阈值</label>
+      <label id="thresholdLabel">二值化阈值 <span class="value-display" id="thresholdInput">180</span></label>
       <div style="display:flex;gap:4px;align-items:center">
         <button class="stepper-btn" data-target="threshold" data-step="-1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">−</button>
         <input type="range" id="threshold" min="1" max="255" value="180" step="1" style="flex:1">
         <button class="stepper-btn" data-target="threshold" data-step="1" style="width:28px;height:28px;font-size:16px;padding:0;flex:none">+</button>
-        <input type="number" id="thresholdInput" value="180" min="1" max="255" style="width:55px;padding:3px 4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;text-align:center;outline:none">
       </div>
     </div>
   </div>
@@ -595,7 +600,7 @@
       <div style="display:grid;grid-template-columns:1fr 36px 1fr;grid-template-rows:1fr 36px 1fr;gap:4px;align-items:center;justify-items:center">
         <div style="grid-row:1;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:2px">
           <span style="font-size:10px;color:var(--comment)" data-i18n="top">上</span>
-          <input type="number" id="paddingTop" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
+          <span id="paddingTop" class="padding-display">0</span>
           <div style="display:flex;gap:2px">
             <button class="stepper-btn" data-target="paddingTop" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
             <button class="stepper-btn" data-target="paddingTop" data-step="1" style="width:24px;height:22px;font-size:12px;padding:0">+</button>
@@ -603,7 +608,7 @@
         </div>
         <div style="grid-row:2;grid-column:1;display:flex;flex-direction:column;align-items:center;gap:2px">
           <span style="font-size:10px;color:var(--comment)" data-i18n="left">左</span>
-          <input type="number" id="paddingLeft" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
+          <span id="paddingLeft" class="padding-display">0</span>
           <div style="display:flex;gap:2px">
             <button class="stepper-btn" data-target="paddingLeft" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
             <button class="stepper-btn" data-target="paddingLeft" data-step="1" style="width:24px;height:22px;font-size:12px;padding:0">+</button>
@@ -612,7 +617,7 @@
         <div style="grid-row:2;grid-column:2;color:var(--comment);font-size:14px;opacity:0.3">+</div>
         <div style="grid-row:2;grid-column:3;display:flex;flex-direction:column;align-items:center;gap:2px">
           <span style="font-size:10px;color:var(--comment)" data-i18n="right">右</span>
-          <input type="number" id="paddingRight" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
+          <span id="paddingRight" class="padding-display">0</span>
           <div style="display:flex;gap:2px">
             <button class="stepper-btn" data-target="paddingRight" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
             <button class="stepper-btn" data-target="paddingRight" data-step="1" style="width:24px;height:22px;font-size:12px;padding:0">+</button>
@@ -620,7 +625,7 @@
         </div>
         <div style="grid-row:3;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:2px">
           <span style="font-size:10px;color:var(--comment)" data-i18n="bottom">下</span>
-          <input type="number" id="paddingBottom" value="0" min="-100" max="100" class="padding-input" style="width:52px;padding:3px 2px;font-size:12px">
+          <span id="paddingBottom" class="padding-display">0</span>
           <div style="display:flex;gap:2px">
             <button class="stepper-btn" data-target="paddingBottom" data-step="-1" style="width:24px;height:22px;font-size:12px;padding:0">−</button>
             <button class="stepper-btn" data-target="paddingBottom" data-step="1" style="width:24px;height:22px;font-size:12px;padding:0">+</button>
@@ -869,10 +874,10 @@
     let cropH = maxRow - minRow + 1;
 
     // 应用用户设置的边距
-    const pt = parseInt(paddingTop.value) || 0;
-    const pb = parseInt(paddingBottom.value) || 0;
-    const pl = parseInt(paddingLeft.value) || 0;
-    const pr = parseInt(paddingRight.value) || 0;
+    const pt = parseInt(paddingTop.textContent) || 0;
+    const pb = parseInt(paddingBottom.textContent) || 0;
+    const pl = parseInt(paddingLeft.textContent) || 0;
+    const pr = parseInt(paddingRight.textContent) || 0;
 
     // 应用偏移
     const ox = parseInt(offsetX.value) || 0;
@@ -1050,10 +1055,10 @@
 
   // ---- 将边距/偏移应用到裁剪后的矩阵 ----
   function applyPadding(rawMatrix, origW, origH) {
-    const pt = parseInt(paddingTop.value) || 0;
-    const pb = parseInt(paddingBottom.value) || 0;
-    const pl = parseInt(paddingLeft.value) || 0;
-    const pr = parseInt(paddingRight.value) || 0;
+    const pt = parseInt(paddingTop.textContent) || 0;
+    const pb = parseInt(paddingBottom.textContent) || 0;
+    const pl = parseInt(paddingLeft.textContent) || 0;
+    const pr = parseInt(paddingRight.textContent) || 0;
     const ox = parseInt(offsetX.value) || 0;
     const oy = parseInt(offsetY.value) || 0;
     const finalW = Math.max(1, origW + pl + pr);
@@ -1091,8 +1096,8 @@
         return { ...c, matrix, width: w, height: h };
       });
       // 重新应用手动编辑（原始坐标 → 边距偏移跟随）
-      const pt2 = parseInt(paddingTop.value) || 0;
-      const pl2 = parseInt(paddingLeft.value) || 0;
+      const pt2 = parseInt(paddingTop.textContent) || 0;
+      const pl2 = parseInt(paddingLeft.textContent) || 0;
       const ox2 = parseInt(offsetX.value) || 0;
       const oy2 = parseInt(offsetY.value) || 0;
       for (const d of _editDeltas) {
@@ -1254,8 +1259,8 @@
         if (row >= 0 && row < chars[cr.idx].matrix.length && col >= 0 && col < chars[cr.idx].matrix[0].length) {
           chars[cr.idx].matrix[row][col] = e.button === 2 ? 0 : 1;
           // 保存手动编辑（转换为原始裁剪矩阵坐标，跟随边距偏移移动）
-          const pt = parseInt(paddingTop.value) || 0;
-          const pl = parseInt(paddingLeft.value) || 0;
+          const pt = parseInt(paddingTop.textContent) || 0;
+          const pl = parseInt(paddingLeft.textContent) || 0;
           const ox = parseInt(offsetX.value) || 0;
           const oy = parseInt(offsetY.value) || 0;
           const val = e.button === 2 ? 0 : 1;
@@ -1505,15 +1510,7 @@
     scheduleRender();
   });
   thresholdSlider.addEventListener('input', () => {
-    thresholdInput.value = thresholdSlider.value;
-    scheduleRender();
-  });
-  thresholdInput.addEventListener('input', () => {
-    let v = parseInt(thresholdInput.value);
-    if (isNaN(v)) v = 180;
-    v = Math.max(1, Math.min(255, v));
-    thresholdSlider.value = v;
-    thresholdInput.value = v;
+    thresholdInput.textContent = thresholdSlider.value;
     scheduleRender();
   });
 
@@ -1529,30 +1526,65 @@
     });
   });
 
-  // ---- 边距步进按钮 ----
+  // ---- 边距步进按钮（支持 Shift 加速 ×10、长按连发） ----
   document.querySelectorAll('.stepper-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const targetId = this.dataset.target;
-      const step = parseInt(this.dataset.step);
-      const input = document.getElementById(targetId);
-      let val = parseInt(input.value) || 0;
+    function doStep(el) {
+      const targetId = el.dataset.target;
+      let step = parseInt(el.dataset.step);
+      if (step === 0) return;
+      // Shift 键 10 倍步进
+      const shiftMultiplier = document.__shiftHeld ? 10 : 1;
+      step *= shiftMultiplier;
+      handleStepper(targetId, step);
+    }
+    btn.addEventListener('click', function(e) {
+      doStep(this);
+    });
+    // 长按连发：按下 400ms 后开始每 80ms 触发一次
+    let holdTimer = null, repeatTimer = null;
+    btn.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      holdTimer = setTimeout(() => {
+        repeatTimer = setInterval(() => doStep(btn), 80);
+      }, 400);
+    });
+    btn.addEventListener('mouseup', () => { clearTimers(); });
+    btn.addEventListener('mouseleave', () => { clearTimers(); });
+    function clearTimers() {
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
+    }
+  });
+  // 全局监听 Shift 键状态
+  document.addEventListener('keydown', e => { if (e.key === 'Shift') document.__shiftHeld = true; });
+  document.addEventListener('keyup', e => { if (e.key === 'Shift') document.__shiftHeld = false; });
+
+  function handleStepper(targetId, step) {
+    const input = document.getElementById(targetId);
+    let val;
+    if (targetId === 'paddingTop' || targetId === 'paddingBottom' || targetId === 'paddingLeft' || targetId === 'paddingRight') {
+      val = parseInt(input.textContent) || 0;
+      val = Math.max(-100, Math.min(100, val + step));
+      input.textContent = val;
+    } else {
+      val = parseInt(input.value) || 0;
       const min = parseInt(input.min) || -Infinity;
       const max = parseInt(input.max) || Infinity;
       val = Math.max(min, Math.min(max, val + step));
       input.value = val;
-      if (targetId === 'offsetX' || targetId === 'offsetY') updateOffsetDisplay();
-      if (targetId === 'fontSize') {
-        fontSizeDisplay.textContent = val;
-        document.querySelectorAll('.btn-shortcut[data-size]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.size) === val));
-      }
-      if (targetId === 'cellSize') {
-        cellSizeDisplay.textContent = val;
-        document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cell) === val));
-      }
-      if (targetId === 'threshold') thresholdInput.value = val;
-      scheduleRender();
-    });
-  });
+    }
+    if (targetId === 'offsetX' || targetId === 'offsetY') updateOffsetDisplay();
+    if (targetId === 'fontSize') {
+      fontSizeDisplay.textContent = val;
+      document.querySelectorAll('.btn-shortcut[data-size]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.size) === val));
+    }
+    if (targetId === 'cellSize') {
+      cellSizeDisplay.textContent = val;
+      document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cell) === val));
+    }
+    if (targetId === 'threshold') thresholdInput.textContent = val;
+    scheduleRender();
+  }
 
   // ---- 点阵单元快捷按钮 ----
   document.querySelectorAll('.btn-shortcut[data-cell]').forEach(btn => {
@@ -1566,8 +1598,10 @@
     });
   });
 
+
+
   function onOffsetChange() { if (updateOffsetDisplay) updateOffsetDisplay(); scheduleRender(); }
-  [paddingTop, paddingBottom, paddingLeft, paddingRight, offsetX, offsetY].forEach(el => {
+  [offsetX, offsetY].forEach(el => {
     el.addEventListener('input', onOffsetChange);
     el.addEventListener('change', onOffsetChange);
   });
@@ -1654,7 +1688,7 @@
     let output = t('exportHeader', text, chars.length) + '\n';
     output += t('exportFont', loadedFontName, fontSize, thresholdVal) + '\n';
     output += t('exportSize', uniW, uniH) + '\n';
-    output += t('exportPadding', paddingTop.value, paddingBottom.value, paddingLeft.value, paddingRight.value) + '\n';
+    output += t('exportPadding', paddingTop.textContent, paddingBottom.textContent, paddingLeft.textContent, paddingRight.textContent) + '\n';
     output += t('exportOffset', offsetX.value, offsetY.value) + '\n';
     output += t('exportYinYang', yinYangSelect.value === 'yin' ? t('yinLabel') : t('yangLabel')) + '\n';
     output += t('exportFormat', dimName, langName) + '\n';
@@ -1821,7 +1855,7 @@
               threshold: thresholdVal,
               cellSize: cellSize,
               unifiedSize: { width: uniW, height: uniH },
-              padding: { top: parseInt(paddingTop.value), bottom: parseInt(paddingBottom.value), left: parseInt(paddingLeft.value), right: parseInt(paddingRight.value) },
+              padding: { top: parseInt(paddingTop.textContent), bottom: parseInt(paddingBottom.textContent), left: parseInt(paddingLeft.textContent), right: parseInt(paddingRight.textContent) },
               offset: { x: parseInt(offsetX.value), y: parseInt(offsetY.value) },
               chars: chars.map((ch, idx) => ({
                 index: idx,
@@ -1986,7 +2020,7 @@
       fnEl.innerHTML = t('fontLoaded') + ' <strong style="color:#43e97b">' + loadedFontName + '</strong>';
     }
     // 处理带值显示的标签（仅替换文本节点，保留原 span 元素引用）
-    const labelMap = { fontSizeLabel:'fontSize', cellSizeLabel:'cellSize', offsetLabel:'offset' };
+    const labelMap = { fontSizeLabel:'fontSize', cellSizeLabel:'cellSize', offsetLabel:'offset', thresholdLabel:'threshold' };
     for (const [id, key] of Object.entries(labelMap)) {
       const el = document.getElementById(id);
       if (!el) continue;
