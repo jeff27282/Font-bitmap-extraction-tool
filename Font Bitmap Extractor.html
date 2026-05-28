@@ -82,8 +82,77 @@
     background: var(--accent);
     cursor: pointer;
   }
+  /* ---- 自定义下拉组件 ---- */
+  .custom-select-wrap {
+    position: relative;
+    width: 100%;
+  }
+  .custom-select-trigger {
+    width: 100%;
+    padding: 4px 26px 4px 8px;
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 12px;
+    cursor: pointer;
+    min-height: 28px;
+    line-height: 20px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+    position: relative;
+  }
+  .custom-select-trigger::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--comment);
+    transition: transform 0.2s;
+  }
+  .custom-select-trigger.open::after {
+    transform: translateY(-50%) rotate(180deg);
+  }
+  .custom-select-trigger:hover { border-color: var(--accent); }
+  .custom-select-trigger:focus,
+  .custom-select-trigger.open { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(88,166,255,0.2); }
+  .custom-select-trigger.disabled {
+    opacity: 0.4; cursor: not-allowed; pointer-events: none;
+  }
+
+  .custom-select-dropdown {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 2px;
+    z-index: 500;
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .custom-select-dropdown.open { display: block; }
+  .custom-select-option {
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: default;
+    transition: background 0.1s;
+  }
+  .custom-select-option:hover { background: rgba(88,166,255,0.15); }
+  .custom-select-option.selected { color: var(--accent); font-weight: 600; background: rgba(88,166,255,0.08); }
   .control-group input[type="number"],
-  .control-group select,
   .control-group input[type="text"] {
     width: 100%;
     padding: 6px 10px;
@@ -189,18 +258,30 @@
     word-break: break-all;
   }
 
+  /* 交互元素手指光标 */
+  .file-input-wrapper,
+  .file-input-wrapper .btn,
+  .custom-select-trigger, input[type="range"],
+  input[type="range"]::-webkit-slider-thumb,
+  .stepper-btn, .btn-shortcut, .btn-size,
+  .mode-btn, .btn-icon { cursor: pointer; }
+
   /* ---- 右侧预览区 ---- */
   .preview-area {
     display: flex;
     flex-direction: column;
     gap: 20px;
     align-self: start;
+    width: 100%;
+    min-width: 0;
   }
   .preview-card {
     background: var(--raised);
     border-radius: 8px;
     padding: 20px;
     border: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
   }
   .preview-card h2 {
     font-size: 14px;
@@ -663,6 +744,38 @@
     border-radius: 3px;
   }
 
+  /* ---- 图片+导出左右布局 ---- */
+  .image-export-row {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+  }
+  .image-export-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--raised);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 16px;
+  }
+  .image-export-col.image-mode-only { display: none; }
+  body.mode-image .image-export-col.image-mode-only { display: flex; }
+  .image-export-col .canvas-wrapper {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .image-export-col #exportOutput {
+    min-height: 120px;
+    flex: 1;
+    resize: none;
+    box-sizing: border-box;
+  }
+
   /* ---- 输出区域叠加层 ---- */
   #outputOverlay { display: none; }
   #outputOverlay.active { display: block; }
@@ -878,7 +991,7 @@
     </div>
     <div class="control-group image-mode-only">
       <label data-i18n="colorMode">色彩模式</label>
-      <select id="imageColorMode" style="width:100%;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none">
+      <select id="imageColorMode" class="select-unified">
         <option value="rgb565">RGB565</option>
         <option value="rgb888" data-i18n="rgb888Full">RGB888（24位真彩）</option>
         <option value="rgb332" data-i18n="clrRGB332">RGB332</option>
@@ -1009,21 +1122,21 @@
       <div class="control-row" style="gap:6px">
         <div class="control-group" style="flex:1">
           <label style="font-size:11px" data-i18n="yinYang">阴阳码</label>
-          <select id="yinYangSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
+          <select id="yinYangSelect" class="select-unified">
             <option value="yang" data-i18n="yangCode">阳码</option>
             <option value="yin" data-i18n="yinCode">阴码</option>
           </select>
         </div>
         <div class="control-group" style="flex:1">
           <label style="font-size:11px" data-i18n="dimension">维度</label>
-          <select id="arrayDimSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
+          <select id="arrayDimSelect" class="select-unified">
             <option value="1d" data-i18n="dim1d">字节压缩</option>
             <option value="2d" data-i18n="dim2d">逐位展开</option>
           </select>
         </div>
         <div class="control-group" style="flex:1">
           <label style="font-size:11px" data-i18n="exportLang">语言</label>
-          <select id="langSelect" style="width:100%;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;outline:none">
+          <select id="langSelect" class="select-unified">
             <option value="c">C/C++</option>
             <option value="arduino">Arduino</option>
             <option value="python">Python</option>
@@ -1037,6 +1150,7 @@
       </div>
     </div>
 
+    <div style="border-top:1px solid var(--border);margin:8px 0 12px 0"></div>
     <!-- 操作按钮 -->
     <div class="btn-group" style="display:flex;gap:8px">
       <button class="btn btn-primary" id="copyBtn" style="flex:1" data-i18n="copyExport">复制导出</button>
@@ -1067,22 +1181,17 @@
       </div>
     </div>
 
-    <!-- 原始图片 -->
-    <div class="preview-card image-mode-only">
-      <h2 data-i18n="originalImage">原始图片</h2>
-      <div class="canvas-wrapper" id="imagePreviewWrapper">
-        <img id="originalImage" style="max-width:100%;display:none" alt="" data-i18n-title="originalImage" title="原始图片">
-        <span id="imagePlaceholder" style="color:var(--comment);font-size:13px" data-i18n="importImageHint">请导入图像</span>
+    <!-- 原始图片(仅图片模式) + 导出数据 左右排布 -->
+    <div class="image-export-row">
+      <div class="image-export-col image-mode-only">
+        <div class="canvas-wrapper" id="imagePreviewWrapper">
+          <img id="originalImage" style="max-width:100%;display:none" alt="" data-i18n-title="originalImage" title="原始图片">
+          <span id="imagePlaceholder" style="color:var(--comment);font-size:13px" data-i18n="importImageHint">请导入图像</span>
+        </div>
       </div>
-    </div>
-
-    <!-- 导出区 -->
-    <div class="export-card">
-      <div class="export-header">
-        <h2 data-i18n="exportData">导出数据</h2>
-
+      <div class="image-export-col">
+        <textarea id="exportOutput" readonly data-i18n-placeholder="exportPlaceholder" placeholder="点击「刷新导出」或调整参数后自动生成..."></textarea>
       </div>
-      <textarea id="exportOutput" readonly data-i18n-placeholder="exportPlaceholder" placeholder="点击「刷新导出」或调整参数后自动生成..."></textarea>
     </div>
   </div>
 
@@ -1130,6 +1239,109 @@
 
   const bitmapDims        = document.getElementById('bitmapDims');
   const exportOutput      = document.getElementById('exportOutput');
+
+  // ---- 自定义下拉组件初始化 ----
+  function initCustomSelects() {
+    document.querySelectorAll('select.select-unified').forEach(function(sel) {
+      // 跳过已初始化的
+      if (sel.dataset.customSelect) return;
+      sel.dataset.customSelect = '1';
+      sel.style.display = 'none';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'custom-select-wrap';
+
+      const trigger = document.createElement('div');
+      trigger.className = 'custom-select-trigger';
+      trigger.tabIndex = 0;
+      trigger.textContent = sel.options[sel.selectedIndex]?.textContent || '';
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'custom-select-dropdown';
+
+      function buildOptions() {
+        dropdown.innerHTML = '';
+        Array.from(sel.options).forEach(function(opt) {
+          const item = document.createElement('div');
+          item.className = 'custom-select-option';
+          if (opt.selected) item.classList.add('selected');
+          item.textContent = opt.textContent;
+          item.dataset.value = opt.value;
+          item.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            sel.value = this.dataset.value;
+            trigger.textContent = this.textContent;
+            dropdown.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+            closeDropdown();
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          });
+          dropdown.appendChild(item);
+        });
+      }
+      buildOptions();
+
+      function openDropdown() {
+        dropdown.classList.add('open');
+        trigger.classList.add('open');
+      }
+      function closeDropdown() {
+        dropdown.classList.remove('open');
+        trigger.classList.remove('open');
+      }
+      function toggleDropdown() {
+        if (trigger.classList.contains('open')) closeDropdown();
+        else openDropdown();
+      }
+
+      trigger.addEventListener('click', toggleDropdown);
+
+      // 键盘支持
+      trigger.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDropdown(); }
+        if (e.key === 'Escape') closeDropdown();
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const items = dropdown.querySelectorAll('.custom-select-option');
+          const cur = dropdown.querySelector('.selected');
+          let idx = cur ? Array.from(items).indexOf(cur) : -1;
+          idx = e.key === 'ArrowDown' ? Math.min(idx + 1, items.length - 1) : Math.max(idx - 1, 0);
+          if (idx >= 0) {
+            items.forEach(o => o.classList.remove('selected'));
+            items[idx].classList.add('selected');
+            sel.value = items[idx].dataset.value;
+            trigger.textContent = items[idx].textContent;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+      });
+
+      // 点击外部关闭
+      function outsideClick(e) {
+        if (!wrap.contains(e.target)) closeDropdown();
+      }
+      document.addEventListener('click', outsideClick);
+
+      // 禁用态同步
+      function syncDisabled() {
+        trigger.classList.toggle('disabled', sel.disabled);
+      }
+      syncDisabled();
+      new MutationObserver(syncDisabled).observe(sel, { attributes: true, attributeFilter: ['disabled'] });
+
+      // 选项变更时重建（用于 i18n 更新选项文本）
+      function rebuildOptions() {
+        buildOptions();
+        trigger.textContent = sel.options[sel.selectedIndex]?.textContent || '';
+      }
+      sel._rebuildCustomOptions = rebuildOptions;
+
+      wrap.appendChild(trigger);
+      wrap.appendChild(dropdown);
+      sel.parentNode.insertBefore(wrap, sel.nextSibling);
+    });
+  }
+  initCustomSelects();
 
   // ---- 本地字库 DOM ----
   const localFontsGroup   = document.getElementById('localFontsGroup');
@@ -2153,7 +2365,7 @@
     placeholder.textContent = t('historyTitle', _textHistory.length);
     dropdown.innerHTML = _textHistory.map((t, i) => {
       const escaped = t.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      return '<div style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid var(--border);cursor:pointer;font-size:12px" data-idx="' + i + '">' +
+      return '<div style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid var(--border);font-size:12px" data-idx="' + i + '">' +
         '<span class="text-his-item" data-idx="' + i + '" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">' + escaped + '</span>' +
         '<span class="text-his-del" data-idx="' + i + '" style="color:var(--danger);cursor:pointer;padding:0 4px;font-size:11px;flex:none">✕</span></div>';
     }).join('');
@@ -2898,6 +3110,21 @@
       const textNode = nodes.find(n => n.nodeType === 3 && n.textContent.trim());
       if (textNode) textNode.textContent = t('imageWidth');
     }
+    // 更新历史记录文字
+    const histPlaceholder = document.getElementById('textHistoryPlaceholder');
+    const histDropdown = document.getElementById('textHistoryDropdown');
+    if (histPlaceholder) {
+      histPlaceholder.textContent = _textHistory && _textHistory.length > 0
+        ? t('historyTitle', _textHistory.length)
+        : t('noHistory');
+    }
+    if (histDropdown && (!_textHistory || _textHistory.length === 0)) {
+      histDropdown.innerHTML = '<div style="padding:8px;font-size:11px;color:var(--comment);text-align:center">' + t('noHistory') + '</div>';
+    }
+    // 重建自定义下拉选项（语言更新后选项文本可能变了）
+    document.querySelectorAll('select.select-unified').forEach(function(sel) {
+      if (sel._rebuildCustomOptions) sel._rebuildCustomOptions();
+    });
   }
 
   function showLangModal() {
