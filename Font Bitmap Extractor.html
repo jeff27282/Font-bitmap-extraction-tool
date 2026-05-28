@@ -663,6 +663,45 @@
     border-radius: 3px;
   }
 
+  /* ---- 输出区域叠加层 ---- */
+  #outputOverlay { display: none; }
+  #outputOverlay.active { display: block; }
+  .output-handle {
+    position: absolute;
+    z-index: 11;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .output-handle-close {
+    width: 20px; height: 20px;
+    background: var(--danger);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 18px;
+    text-align: center;
+    font-weight: bold;
+    user-select: none;
+  }
+  .output-handle-resize {
+    width: 16px; height: 16px;
+    border: 2px solid #fff;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  }
+  .output-handle-move {
+    width: 18px; height: 18px;
+    background: var(--comment);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: move;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #fff; user-select: none;
+  }
+
   @media (max-width: 1100px) {
     .container { grid-template-columns: 1fr; }
   }
@@ -860,6 +899,9 @@
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn" id="eyeDropperBtn" style="flex:1" data-i18n="eyeDropper">吸笔</button>
         <button class="btn" id="drawBrushBtn" style="flex:1" data-i18n="drawBrush">画笔</button>
+        <button class="btn" id="outputAreaBtn" data-i18n="outputArea">输出区域</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
         <div id="colorPreview" style="width:32px;height:32px;border:2px solid var(--border);border-radius:4px;background:#000;flex:none"></div>
         <span id="colorHex" style="font-size:12px;color:var(--accent);font-weight:bold;font-family:monospace">#000000</span>
       </div>
@@ -1010,6 +1052,7 @@
       <h2 data-i18n="bitmapPreview">点阵效果图(可手动编辑)</h2>
       <div class="canvas-wrapper" id="bitmapPreviewWrapper">
         <canvas id="bitmapCanvas"></canvas>
+        <canvas id="outputOverlay" style="position:fixed;pointer-events:none;z-index:9999;touch-action:none"></canvas>
       </div>
       <div class="info-bar">
         <span><em id="bitmapDims">0 × 0</em></span>
@@ -2637,6 +2680,7 @@
       // UI文本
       noHistory:'暂无历史记录',
       historyTitle:'历史输入记录 ({0})',
+      outputArea:'输出区域',
       eyeDropper:'吸笔',
       eyeDropperActive:'吸笔中...',
       drawBrush:'画笔',
@@ -2733,6 +2777,7 @@
       // UI text
       noHistory:'No history',
       historyTitle:'Text History ({0})',
+      outputArea:'Output Area',
       eyeDropper:'Eyedropper',
       eyeDropperActive:'Eyedropping...',
       drawBrush:'Brush',
@@ -3302,12 +3347,23 @@
     const pr = parseInt(paddingRight.textContent) || 0;
     const ox = parseInt(offsetX.value) || 0;
     const oy = parseInt(offsetY.value) || 0;
-    const w = Math.max(1, gridW + pl + pr);
-    const h = Math.max(1, gridH + pt + pb);
+    let w = Math.max(1, gridW + pl + pr);
+    let h = Math.max(1, gridH + pt + pb);
+    // 输出区域裁剪
+    let areaX = 0, areaY = 0, areaW = w, areaH = h;
+    if (_outputAreaActive && _outputArea) {
+      areaX = Math.max(0, Math.min(_outputArea.x, w - 1));
+      areaY = Math.max(0, Math.min(_outputArea.y, h - 1));
+      areaW = Math.max(1, Math.min(_outputArea.w, w - areaX));
+      areaH = Math.max(1, Math.min(_outputArea.h, h - areaY));
+    }
     const colorMode = document.getElementById('imageColorMode').value;
     const lang = langSelect.value;
+    const isCropped = _outputAreaActive && _outputArea && (areaX !== 0 || areaY !== 0 || areaW !== w || areaH !== h);
+    const exportW = isCropped ? areaW : w;
+    const exportH = isCropped ? areaH : h;
     const bytesPerPixel = { 'bw': 0.125, 'grayscale4': 0.5, 'grayscale8': 1, 'rgb332': 1, 'rgb565': 2, 'rgb888': 3, 'rgba': 4 }[colorMode] || 1;
-    const totalBytes = Math.ceil(w * h * bytesPerPixel);
+    const totalBytes = Math.ceil(exportW * exportH * bytesPerPixel);
     const colorModeNames = { 'bw': t('clrBW'), 'grayscale4': t('clrGray4'), 'grayscale8': t('clrGray8'), 'rgb332': t('clrRGB332'), 'rgb565': t('clrRGB565'), 'rgb888': t('clrRGB888'), 'rgba': t('clrRGBA') };
     const fileName = document.getElementById('imageFileName').textContent || t('exportNoName');
     const yinYang = yinYangSelect.value === 'yin' ? t('exportYin') : t('exportYang');
@@ -3317,6 +3373,7 @@
     output += t('exportColorMode', colorModeNames[colorMode] || colorMode) + '\n';
     output += '// 边距(T/B/L/R): ' + pt + '/' + pb + '/' + pl + '/' + pr + '\n';
     output += '// 偏移(X/Y): ' + ox + '/' + oy + '\n';
+    if (isCropped) output += '// 输出区域: (' + areaX + ',' + areaY + ') ' + exportW + '×' + exportH + '\n';
     output += t('exportYinYang', yinYang) + '\n';
     output += t('exportPixelSize', bytesPerPixel, totalBytes) + '\n\n';
 
@@ -3350,7 +3407,7 @@
       return L.braceE + L.semi + '\n\n';
     }
 
-    output += imgHeader('canvas0', h + '][' + w + dim3d);
+    output += imgHeader('canvas0', exportH + '][' + exportW + dim3d);
 
     function getPx(row, col) {
       const srcRow = row - pt + oy;
@@ -3363,17 +3420,17 @@
 
     if (colorMode === 'bw') {
       // 黑白：逐位 0/1（quantizeColor 已处理阴阳码）
-      for (let r = 0; r < h; r++) {
+      for (let r = areaY; r < areaY + areaH; r++) {
         const vals = [];
-        for (let c = 0; c < w; c++) {
+        for (let c = areaX; c < areaX + areaW; c++) {
           vals.push(getPx(r, c).r > 127 ? '1' : '0');
         }
         output += (lang === 'python' ? '    [' : '  {') + vals.join(', ') + (lang === 'python' ? '],\n' : '},\n');
       }
     } else if (colorMode === 'grayscale4' || colorMode === 'grayscale8') {
-      for (let r = 0; r < h; r++) {
+      for (let r = areaY; r < areaY + areaH; r++) {
         const vals = [];
-        for (let c = 0; c < w; c++) {
+        for (let c = areaX; c < areaX + areaW; c++) {
           const gray = getPx(r, c).r;
           if (lang === 'python' || lang === 'js') {
             vals.push(String(gray));
@@ -3384,9 +3441,9 @@
         output += (lang === 'python' ? '    [' : '  {') + vals.join(', ') + (lang === 'python' ? '],\n' : '},\n');
       }
     } else if (colorMode === 'rgb565') {
-      for (let r = 0; r < h; r++) {
+      for (let r = areaY; r < areaY + areaH; r++) {
         const vals = [];
-        for (let c = 0; c < w; c++) {
+        for (let c = areaX; c < areaX + areaW; c++) {
           const px = getPx(r, c);
           const val = ((px.r >> 3) << 11) | ((px.g >> 2) << 5) | (px.b >> 3);
           vals.push('0x' + val.toString(16).toUpperCase().padStart(4, '0'));
@@ -3394,9 +3451,9 @@
         output += '  {' + vals.join(', ') + '},\n';
       }
     } else {
-      for (let r = 0; r < h; r++) {
+      for (let r = areaY; r < areaY + areaH; r++) {
         const vals = [];
-        for (let c = 0; c < w; c++) {
+        for (let c = areaX; c < areaX + areaW; c++) {
           const px = getPx(r, c);
           if (lang === 'python' || lang === 'js') {
             vals.push('[' + px.r + ',' + px.g + ',' + px.b + ']');
@@ -3421,6 +3478,7 @@
       const img = new Image();
       img.onload = function() {
         _loadedImage = img;
+        _savedOutputArea = null; // 新图片清除上次线框记忆
         document.getElementById('imageFileName').textContent = t('imageLoaded', file.name);
         updateToolButtons();
         if (document.body.classList.contains('mode-image')) {
@@ -3588,7 +3646,6 @@
 
   eyedropperBtn.addEventListener('click', function() {
     _eyedropperActive = !_eyedropperActive;
-    this.textContent = _eyedropperActive ? t('eyeDropperActive') : t('eyeDropper');
     this.classList.toggle('btn-primary', _eyedropperActive);
     this.classList.toggle('btn-active', _eyedropperActive);
     if (_eyedropperActive && _loadedImage) {
@@ -3597,16 +3654,17 @@
       magnifier.style.display = 'none';
       if (!_loadedImage) {
         _eyedropperActive = false;
-        this.textContent = t('eyeDropper');
         this.classList.remove('btn-primary', 'btn-active');
       }
     }
     document.getElementById('originalImage').classList.toggle('eyedropper-active', _eyedropperActive);
-    // 互斥：关闭画笔
-    if (_eyedropperActive && _drawBrushActive) {
-      _drawBrushActive = false;
-      drawBrushBtn.textContent = t('drawBrush');
-      drawBrushBtn.classList.remove('btn-primary', 'btn-active');
+    // 互斥：关闭画笔和输出区域
+    if (_eyedropperActive) {
+      if (_drawBrushActive) {
+        _drawBrushActive = false;
+        drawBrushBtn.classList.remove('btn-primary', 'btn-active');
+      }
+      if (_outputAreaActive) deactivateOutputArea();
     }
   });
 
@@ -3691,25 +3749,25 @@
 
   drawBrushBtn.addEventListener('click', function() {
     _drawBrushActive = !_drawBrushActive;
-    this.textContent = _drawBrushActive ? t('drawBrushActive') : t('drawBrush');
     this.classList.toggle('btn-primary', _drawBrushActive);
     this.classList.toggle('btn-active', _drawBrushActive);
     if (!_loadedImage && _drawBrushActive) {
       _drawBrushActive = false;
-      this.textContent = t('drawBrush');
       this.classList.remove('btn-primary', 'btn-active');
       return;
     }
-    // 互斥：关闭吸笔
-    if (_drawBrushActive && _eyedropperActive) {
-      _eyedropperActive = false;
-      eyedropperBtn.textContent = t('eyeDropper');
-      eyedropperBtn.classList.remove('btn-primary', 'btn-active');
-      magnifier.style.display = 'none';
+    // 互斥：关闭吸笔和输出区域
+    if (_drawBrushActive) {
+      if (_eyedropperActive) {
+        _eyedropperActive = false;
+        eyedropperBtn.classList.remove('btn-primary', 'btn-active');
+        magnifier.style.display = 'none';
+      }
+      if (_outputAreaActive) deactivateOutputArea();
     }
   });
 
-  // 吸笔取色 - 点击点阵画布取色并设为当前笔色
+  // 吸笔取色 - 点击点阵画布取色（一直吸，不退出），右键退出吸笔模式
   bitmapCanvas.addEventListener('click', function(e) {
     if (!_eyedropperActive || !_imageBitmapData) return;
     const rect = this.getBoundingClientRect();
@@ -3723,22 +3781,388 @@
     if (row < 0 || row >= _imageBitmapData.length || col < 0 || col >= _imageBitmapData[0].length) return;
     const px = _imageBitmapData[row][col];
     updatePickedColor(px.r, px.g, px.b);
-    // 取色后自动关闭吸笔
+  });
+
+  // 右键退出吸笔模式
+  bitmapCanvas.addEventListener('contextmenu', function(e) {
+    if (!_eyedropperActive) return;
+    e.preventDefault();
+    deactivateEyedropper();
+  });
+
+  function deactivateEyedropper() {
     _eyedropperActive = false;
-    eyedropperBtn.textContent = t('eyeDropper');
     eyedropperBtn.classList.remove('btn-primary', 'btn-active');
     magnifier.style.display = 'none';
     document.getElementById('originalImage').classList.remove('eyedropper-active');
-    // 互斥：关闭画笔
-    if (_drawBrushActive) {
-      _drawBrushActive = false;
-      drawBrushBtn.textContent = t('drawBrush');
-      drawBrushBtn.classList.remove('btn-primary', 'btn-active');
-    }
-  });
+  }
 
   bitmapCanvas.addEventListener('mouseleave', function() {
   });
+
+  // ---- 输出区域工具 ----
+  let _outputAreaActive = false;
+  let _outputArea = null; // { x, y, w, h } in grid cells
+  const outputOverlay = document.getElementById('outputOverlay');
+  const outputOverlayCtx = outputOverlay.getContext('2d');
+  const outputAreaBtn = document.getElementById('outputAreaBtn');
+  let _savedOutputArea = null; // 保存上次的线框尺寸
+  let _outputDragMode = null; // 'move' | 'resizeTL' | 'resizeBR' | null
+  let _dragStartX = 0, _dragStartY = 0;
+  let _dragOrigArea = null;
+
+  function outputAreaToPixel(area) {
+    const cs = parseInt(cellSizeSlider.value);
+    return { x: area.x * cs, y: area.y * cs, w: area.w * cs, h: area.h * cs };
+  }
+
+  function drawOutputOverlay() {
+    withOverlayScale();
+    const ctx = outputOverlayCtx;
+    ctx.clearRect(0, 0, outputOverlay.width, outputOverlay.height);
+    if (!_outputArea) return;
+    const p = outputAreaToPixel(_outputArea);
+    const ow = outputOverlay.width, oh = outputOverlay.height;
+    const s = _overlayScale;
+
+    // 半透明遮罩（外部变暗）
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(0, 0, ow, p.y);
+    ctx.fillRect(0, p.y + p.h, ow, oh - p.y - p.h);
+    ctx.fillRect(0, p.y, p.x, p.h);
+    ctx.fillRect(p.x + p.w, p.y, ow - p.x - p.w, p.h);
+
+    // 1px 白色边框
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(p.x, p.y, p.w, p.h);
+
+    // 左上角拖拽手柄 (resizeTL) — 放在线框内左上角，带半透明背景
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(p.x + 2 * s, p.y + 2 * s, 10 * s, 10 * s);
+    ctx.fillStyle = '#58a6ff';
+    ctx.fillRect(p.x + 3 * s, p.y + 3 * s, 8 * s, 8 * s);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5 * s;
+    ctx.strokeRect(p.x + 3 * s, p.y + 3 * s, 8 * s, 8 * s);
+
+    // 右下角拖拽手柄 (resizeBR) — 放在线框内右下角，带半透明背景
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(p.x + p.w - 12 * s, p.y + p.h - 12 * s, 10 * s, 10 * s);
+    ctx.fillStyle = '#58a6ff';
+    ctx.fillRect(p.x + p.w - 11 * s, p.y + p.h - 11 * s, 8 * s, 8 * s);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5 * s;
+    ctx.strokeRect(p.x + p.w - 11 * s, p.y + p.h - 11 * s, 8 * s, 8 * s);
+
+    // 右上角关闭按钮 (×) — 放在线框内右上角，带半透明背景
+    const cx = p.x + p.w - 10 * s, cy = p.y + 10 * s;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 9 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f85149';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1 * s;
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold ' + Math.round(11 * s) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('×', cx, cy + 0.5 * s);
+
+    // 左下角移动手柄 (◉) — 放在线框内左下角，带半透明背景
+    const mx = p.x + 10 * s, my = p.y + p.h - 10 * s;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.arc(mx, my, 9 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#8b949e';
+    ctx.beginPath();
+    ctx.arc(mx, my, 7 * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5 * s;
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = Math.round(10 * s) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⣿', mx, my + 0.5 * s);
+
+    // 显示尺寸信息 — 放在线框内顶部居中，带半透明背景
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    const labelW = ctx.measureText(_outputArea.w + '×' + _outputArea.h).width + 14 * s;
+    const lx = p.x + p.w / 2 - labelW / 2;
+    const ly = p.y + 4 * s;
+    ctx.fillRect(lx, ly, labelW, 18 * s);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold ' + Math.round(11 * s) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(_outputArea.w + '×' + _outputArea.h, p.x + p.w / 2, ly + 9 * s);
+  }
+
+  function initOutputArea() {
+    if (!_imageBitmapData) return;
+    const gridH = _imageBitmapData.length;
+    const gridW = _imageBitmapData[0].length;
+    const pt = parseInt(paddingTop.textContent) || 0;
+    const pb = parseInt(paddingBottom.textContent) || 0;
+    const pl = parseInt(paddingLeft.textContent) || 0;
+    const pr = parseInt(paddingRight.textContent) || 0;
+    const totalW = Math.max(1, gridW + pl + pr);
+    const totalH = Math.max(1, gridH + pt + pb);
+    // 初始框 20×20，居中显示（不超过画布范围）
+    const boxSize = 20;
+    const bw = Math.min(boxSize, totalW);
+    const bh = Math.min(boxSize, totalH);
+    const bx = Math.max(0, Math.floor((totalW - bw) / 2));
+    const by = Math.max(0, Math.floor((totalH - bh) / 2));
+    _outputArea = { x: bx, y: by, w: bw, h: bh };
+    syncOverlaySize();
+    drawOutputOverlay();
+  }
+
+  function syncOverlaySize() {
+    const canvasRect = bitmapCanvas.getBoundingClientRect();
+    outputOverlay.width = bitmapCanvas.width;
+    outputOverlay.height = bitmapCanvas.height;
+    outputOverlay.style.width = canvasRect.width + 'px';
+    outputOverlay.style.height = canvasRect.height + 'px';
+    outputOverlay.style.left = canvasRect.left + 'px';
+    outputOverlay.style.top = canvasRect.top + 'px';
+  }
+  let _overlayScale = 1;
+  function withOverlayScale() {
+    const cr = bitmapCanvas.getBoundingClientRect();
+    _overlayScale = cr.width ? bitmapCanvas.width / cr.width : 1;
+  }
+
+  function getCanvasCoord(e) {
+    const rect = bitmapCanvas.getBoundingClientRect();
+    const scaleX = bitmapCanvas.width / rect.width;
+    const scaleY = bitmapCanvas.height / rect.height;
+    withOverlayScale();
+    return {
+      cx: (e.clientX - rect.left) * scaleX,
+      cy: (e.clientY - rect.top) * scaleY
+    };
+  }
+
+  function hitTestOutputArea(cx, cy) {
+    if (!_outputArea) return null;
+    const p = outputAreaToPixel(_outputArea);
+    const s = _overlayScale;
+
+    // 关闭按钮 (右上角，线框内)
+    const closeX = p.x + p.w - 10 * s, closeY = p.y + 10 * s;
+    if (Math.hypot(cx - closeX, cy - closeY) < 10 * s) return 'close';
+
+    // 右下角拖拽 (线框内)
+    if (cx >= p.x + p.w - 12 * s && cx <= p.x + p.w - 2 * s &&
+        cy >= p.y + p.h - 12 * s && cy <= p.y + p.h - 2 * s) return 'resizeBR';
+
+    // 左上角拖拽 (线框内)
+    if (cx >= p.x + 2 * s && cx <= p.x + 12 * s &&
+        cy >= p.y + 2 * s && cy <= p.y + 12 * s) return 'resizeTL';
+
+    // 移动手柄 (左下角，线框内)
+    const moveX = p.x + 10 * s, moveY = p.y + p.h - 10 * s;
+    if (Math.hypot(cx - moveX, cy - moveY) < 12 * s) return 'move';
+
+    // 在区域内 → 也可以移动
+    if (cx >= p.x && cx <= p.x + p.w && cy >= p.y && cy <= p.y + p.h) return 'move';
+
+    return null;
+  }
+
+  outputOverlay.addEventListener('pointerdown', function(e) {
+    if (!_outputAreaActive || !_outputArea) return;
+    const { cx, cy } = getCanvasCoord(e);
+    const hit = hitTestOutputArea(cx, cy);
+    if (hit === 'close') {
+      deactivateOutputArea();
+      return;
+    }
+    if (hit === 'resizeBR' || hit === 'resizeTL') {
+      _outputDragMode = hit;
+      _dragStartX = cx;
+      _dragStartY = cy;
+      _dragOrigArea = { ..._outputArea };
+      this.setPointerCapture(e.pointerId);
+      return;
+    }
+    if (hit === 'move') {
+      _outputDragMode = 'move';
+      _dragStartX = cx;
+      _dragStartY = cy;
+      _dragOrigArea = { ..._outputArea };
+      this.setPointerCapture(e.pointerId);
+      return;
+    }
+  });
+
+  outputOverlay.addEventListener('pointermove', function(e) {
+    if (!_outputAreaActive || !_outputArea) { this.style.cursor = ''; return; }
+    // 悬停时切换光标样式
+    if (!_outputDragMode) {
+      const { cx, cy } = getCanvasCoord(e);
+      const hit = hitTestOutputArea(cx, cy);
+      if (hit === 'resizeBR' || hit === 'resizeTL') this.style.cursor = 'nwse-resize';
+      else if (hit === 'move') this.style.cursor = 'move';
+      else if (hit === 'close') this.style.cursor = 'pointer';
+      else this.style.cursor = '';
+      return;
+    }
+    const { cx, cy } = getCanvasCoord(e);
+    const cs = parseInt(cellSizeSlider.value);
+    const dx = cx - _dragStartX;
+    const dy = cy - _dragStartY;
+
+    // 获取点阵总尺寸（约束边界）
+    const totalGridW = _imageBitmapData ? _imageBitmapData[0].length + (parseInt(paddingLeft.textContent)||0) + (parseInt(paddingRight.textContent)||0) : 0;
+    const totalGridH = _imageBitmapData ? _imageBitmapData.length + (parseInt(paddingTop.textContent)||0) + (parseInt(paddingBottom.textContent)||0) : 0;
+
+    if (_outputDragMode === 'move') {
+      let newX = _dragOrigArea.x + Math.round(dx / cs);
+      let newY = _dragOrigArea.y + Math.round(dy / cs);
+      newX = Math.max(0, Math.min(newX, totalGridW - _dragOrigArea.w));
+      newY = Math.max(0, Math.min(newY, totalGridH - _dragOrigArea.h));
+      _outputArea.x = newX;
+      _outputArea.y = newY;
+    } else if (_outputDragMode === 'resizeBR') {
+      let newW = _dragOrigArea.w + Math.round(dx / cs);
+      let newH = _dragOrigArea.h + Math.round(dy / cs);
+      newW = Math.max(1, Math.min(newW, totalGridW - _dragOrigArea.x));
+      newH = Math.max(1, Math.min(newH, totalGridH - _dragOrigArea.y));
+      _outputArea.w = newW;
+      _outputArea.h = newH;
+    } else if (_outputDragMode === 'resizeTL') {
+      let newX = _dragOrigArea.x + Math.round(dx / cs);
+      let newY = _dragOrigArea.y + Math.round(dy / cs);
+      let newW = _dragOrigArea.w - Math.round(dx / cs);
+      let newH = _dragOrigArea.h - Math.round(dy / cs);
+      // 限制左上角不能越过右下角
+      newX = Math.min(newX, _dragOrigArea.x + _dragOrigArea.w - 1);
+      newY = Math.min(newY, _dragOrigArea.y + _dragOrigArea.h - 1);
+      // 限制不能小于 1
+      newW = Math.max(1, newW);
+      newH = Math.max(1, newH);
+      // 限制不能超出左/上边界
+      newX = Math.max(0, newX);
+      newY = Math.max(0, newY);
+      // 限制右下角不能超出画布
+      if (newX + newW > totalGridW) newW = totalGridW - newX;
+      if (newY + newH > totalGridH) newH = totalGridH - newY;
+      _outputArea.x = Math.max(0, newX);
+      _outputArea.y = Math.max(0, newY);
+      _outputArea.w = Math.max(1, newW);
+      _outputArea.h = Math.max(1, newH);
+    }
+
+    drawOutputOverlay();
+  });
+
+  outputOverlay.addEventListener('pointerup', function(e) {
+    if (_outputDragMode) {
+      _outputDragMode = null;
+      this.releasePointerCapture(e.pointerId);
+    }
+  });
+
+  outputOverlay.addEventListener('pointerleave', function() {
+    if (_outputDragMode) {
+      _outputDragMode = null;
+    }
+  });
+
+  function deactivateOutputArea() {
+    _outputAreaActive = false;
+    _savedOutputArea = _outputArea; // 保存当前线框尺寸
+    _outputArea = null;
+    _outputDragMode = null;
+    outputOverlay.style.display = 'none';
+    outputOverlay.style.pointerEvents = 'none';
+    outputAreaBtn.classList.remove('btn-primary', 'btn-active');
+  }
+
+  outputAreaBtn.addEventListener('click', function() {
+    _outputAreaActive = !_outputAreaActive;
+    this.classList.toggle('btn-primary', _outputAreaActive);
+    this.classList.toggle('btn-active', _outputAreaActive);
+
+    if (_outputAreaActive) {
+      if (!_imageBitmapData) {
+        _outputAreaActive = false;
+        this.classList.remove('btn-primary', 'btn-active');
+        return;
+      }
+      outputOverlay.style.display = 'block';
+      outputOverlay.style.pointerEvents = 'auto';
+      // 恢复上次线框尺寸，或初始 20×20 居中
+      if (_savedOutputArea) {
+        _outputArea = { ..._savedOutputArea };
+        syncOverlaySize();
+        drawOutputOverlay();
+      } else {
+        initOutputArea();
+      }
+      // 互斥：关闭吸笔和画笔
+      if (_eyedropperActive) deactivateEyedropper();
+      if (_drawBrushActive) {
+        _drawBrushActive = false;
+        drawBrushBtn.classList.remove('btn-primary', 'btn-active');
+      }
+    } else {
+      deactivateOutputArea();
+    }
+  });
+
+  // 窗口缩放或滚动时同步 overlay 位置
+  function syncOverlayPosition() {
+    if (_outputAreaActive && outputOverlay.style.display !== 'none') {
+      syncOverlaySize();
+      drawOutputOverlay();
+    }
+  }
+  window.addEventListener('resize', syncOverlayPosition);
+  window.addEventListener('scroll', syncOverlayPosition, true);
+
+  // 当 bitmap 重绘时同步 overlay
+  const _origRenderImageBitmap = renderImageBitmap;
+  renderImageBitmap = function(keepEdits) {
+    _origRenderImageBitmap(keepEdits);
+    if (_outputAreaActive) {
+      syncOverlaySize();
+      // 如果图片尺寸变了，重置输出区域
+      if (_imageBitmapData && _outputArea) {
+        const gridH = _imageBitmapData.length;
+        const gridW = _imageBitmapData[0].length;
+        const pt = parseInt(paddingTop.textContent) || 0;
+        const pb = parseInt(paddingBottom.textContent) || 0;
+        const pl = parseInt(paddingLeft.textContent) || 0;
+        const pr = parseInt(paddingRight.textContent) || 0;
+        const totalW = Math.max(1, gridW + pl + pr);
+        const totalH = Math.max(1, gridH + pt + pb);
+        if (_outputArea.x + _outputArea.w > totalW || _outputArea.y + _outputArea.h > totalH) {
+          _outputArea = { x: 0, y: 0, w: totalW, h: totalH };
+        }
+      }
+      drawOutputOverlay();
+      // 更新尺寸显示
+      const dimEl = document.getElementById('bitmapDims');
+      if (dimEl && _outputArea) {
+        const cs = parseInt(cellSizeSlider.value);
+        const totalW2 = bitmapCanvas.width / cs;
+        const totalH2 = bitmapCanvas.height / cs;
+        dimEl.textContent = `点阵: 区域 ${_outputArea.w}×${_outputArea.h} / 总计 ${totalW2}×${totalH2}`;
+      }
+    }
+  };
 
   // ---- 图片宽度控制 ----
   const imageWidthSlider = document.getElementById('imageWidth');
@@ -3792,11 +4216,13 @@
     const undoBtn = document.getElementById('undoImageBtn');
     const eyeBtn = document.getElementById('eyeDropperBtn');
     const drawBtn = document.getElementById('drawBrushBtn');
+    const areaBtn = document.getElementById('outputAreaBtn');
     const hasImage = !!_loadedImage;
     if (clearBtn) clearBtn.disabled = !_imageEdits || Object.keys(_imageEdits).length === 0;
     if (undoBtn) undoBtn.disabled = _imageUndoStack.length === 0;
     if (eyeBtn) eyeBtn.disabled = !hasImage;
     if (drawBtn) drawBtn.disabled = !hasImage;
+    if (areaBtn) areaBtn.disabled = !hasImage;
   }
 
   // ---- 清空手动绘制的痕迹 ----
@@ -3830,6 +4256,8 @@
   // ---- 模式切换 ----
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      // 切换模式时关闭输出区域
+      if (_outputAreaActive) deactivateOutputArea();
       const mode = this.dataset.mode;
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
