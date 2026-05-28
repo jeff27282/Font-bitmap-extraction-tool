@@ -1,5 +1,4 @@
 Character mode
-
 <img width="1458" height="1068" alt="ScreenShot1" src="https://github.com/user-attachments/assets/4716d083-77b3-4c3a-bc18-c76950b51c03" />
 
 Drawing mode
