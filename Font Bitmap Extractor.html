@@ -3723,6 +3723,7 @@
 
   // ---- 色彩模式切换触发重绘 ----
   document.getElementById('imageColorMode').addEventListener('change', function() {
+    if (_outputAreaActive) deactivateOutputArea();
     const mode = this.value;
     const yinYang = document.getElementById('yinYangSelect');
     const isGrayOrBw = mode === 'bw' || mode === 'grayscale4' || mode === 'grayscale8';
@@ -3730,7 +3731,7 @@
     yinYang.style.opacity = isGrayOrBw ? '1' : '0.4';
     yinYang.style.pointerEvents = isGrayOrBw ? 'auto' : 'none';
     if (document.body.classList.contains('mode-image')) {
-      renderImageBitmap(true);
+      renderImageBitmap(false);
     }
   });
 
@@ -4399,6 +4400,7 @@
   const imageWidthSlider = document.getElementById('imageWidth');
   const imageWidthDisplay = document.getElementById('imageWidthDisplay');
   imageWidthSlider.addEventListener('input', function() {
+    if (_outputAreaActive) deactivateOutputArea();
     const val = parseInt(this.value);
     imageWidthDisplay.textContent = val;
     document.querySelectorAll('.canvas-size-buttons .btn-size[data-w]').forEach(b => {
@@ -4410,6 +4412,7 @@
   });
   document.querySelectorAll('.image-mode-only .canvas-size-buttons .btn-size').forEach(btn => {
     btn.addEventListener('click', function() {
+      if (_outputAreaActive) deactivateOutputArea();
       const w = parseInt(this.dataset.w);
       imageWidthSlider.value = w;
       imageWidthDisplay.textContent = w;
