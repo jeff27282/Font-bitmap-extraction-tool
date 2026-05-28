@@ -43,6 +43,7 @@
     padding: 20px;
     border: 1px solid var(--border);
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    min-width: 0;
   }
   .panel h2 {
     font-size: 16px;
@@ -281,7 +282,9 @@
     padding: 20px;
     border: 1px solid var(--border);
     width: 100%;
+    min-width: 0;
     box-sizing: border-box;
+    overflow: hidden;
   }
   .preview-card h2 {
     font-size: 14px;
@@ -760,6 +763,7 @@
     border-radius: 8px;
     border: 1px solid var(--border);
     padding: 16px;
+    overflow: hidden;
   }
   .image-export-col.image-mode-only { display: none; }
   body.mode-image .image-export-col.image-mode-only { display: flex; }
@@ -1120,21 +1124,21 @@
     <!-- 阴阳码 + 数组维度 + 语言 -->
     <div class="control-group">
       <div class="control-row" style="gap:6px">
-        <div class="control-group" style="flex:1">
+        <div class="control-group" style="flex:1;min-width:0">
           <label style="font-size:11px" data-i18n="yinYang">阴阳码</label>
           <select id="yinYangSelect" class="select-unified">
             <option value="yang" data-i18n="yangCode">阳码</option>
             <option value="yin" data-i18n="yinCode">阴码</option>
           </select>
         </div>
-        <div class="control-group" style="flex:1">
+        <div class="control-group" style="flex:1;min-width:0">
           <label style="font-size:11px" data-i18n="dimension">维度</label>
           <select id="arrayDimSelect" class="select-unified">
             <option value="1d" data-i18n="dim1d">字节压缩</option>
             <option value="2d" data-i18n="dim2d">逐位展开</option>
           </select>
         </div>
-        <div class="control-group" style="flex:1">
+        <div class="control-group" style="flex:1;min-width:0">
           <label style="font-size:11px" data-i18n="exportLang">语言</label>
           <select id="langSelect" class="select-unified">
             <option value="c">C/C++</option>
