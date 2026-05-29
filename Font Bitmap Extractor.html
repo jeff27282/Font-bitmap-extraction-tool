@@ -700,8 +700,6 @@
   body.mode-image .image-mode-only { display: block; }
   body.mode-image .char-mode-only { display: none !important; }
   body.mode-image .draw-mode-only { display: none !important; }
-  body.mode-image #arrayDimSelect { pointer-events: none; opacity: 0.5; }
-
   /* ---- 吸笔放大镜 ---- */
   .eyedropper-active { cursor: crosshair !important; }
   #magnifier {
@@ -1357,6 +1355,7 @@
   let loadedFontFamily = null;   // 自定义字体 family 名
   let loadedFontUrl    = null;   // 自定义字体 URL (blob:)
   let loadedFontName   = '';
+  let _loadedFileName   = null;
   let pendingRender    = null;
   let allFontsData     = [];     // 缓存本地字体列表
 
@@ -2414,8 +2413,20 @@
 
   inputText.addEventListener('change', updateTextHistory);
 
-  yinYangSelect.addEventListener('change', scheduleRender);
-  arrayDimSelect.addEventListener('change', updateExport);
+  yinYangSelect.addEventListener('change', function() {
+    if (document.body.classList.contains('mode-image')) {
+      renderImageBitmap(false);
+    } else {
+      scheduleRender();
+    }
+  });
+  arrayDimSelect.addEventListener('change', function() {
+    if (document.body.classList.contains('mode-image')) {
+      exportOutput.value = generateImageExport();
+    } else {
+      updateExport();
+    }
+  });
   langSelect.addEventListener('change', updateExport);
 
   copyBtn.addEventListener('click', copyExport);
@@ -3062,9 +3073,9 @@
     const imgFnEl = document.getElementById('imageFileName');
     if (imgFnEl) {
       try {
-        // 如果 _loadedImage 已声明且不为 null，说明已加载图片，不覆盖
-        if (typeof _loadedImage !== 'undefined' && _loadedImage) {
-          // keep loaded filename
+        // 有图片时重新翻译标签（保留文件名）
+        if (typeof _loadedImage !== 'undefined' && _loadedImage && _loadedFileName) {
+          imgFnEl.textContent = t('imageLoaded', _loadedFileName);
         } else {
           imgFnEl.textContent = t('imagePlaceholder');
         }
@@ -3602,8 +3613,8 @@
     output += t('exportImageSource', fileName) + '\n';
     output += t('exportImageSize', gridW, gridH, w, h) + '\n';
     output += t('exportColorMode', colorModeNames[colorMode] || colorMode) + '\n';
-    output += '// 边距(T/B/L/R): ' + pt + '/' + pb + '/' + pl + '/' + pr + '\n';
-    output += '// 偏移(X/Y): ' + ox + '/' + oy + '\n';
+    output += t('exportPadding', pt, pb, pl, pr) + '\n';
+    output += t('exportOffset', ox, oy) + '\n';
     if (isCropped) output += '// 输出区域: (' + areaX + ',' + areaY + ') ' + exportW + '×' + exportH + '\n';
     output += t('exportYinYang', yinYang) + '\n';
     output += t('exportPixelSize', bytesPerPixel, totalBytes) + '\n\n';
@@ -3710,6 +3721,7 @@
       img.onload = function() {
         _loadedImage = img;
         _savedOutputArea = null; // 新图片清除上次线框记忆
+        _loadedFileName = file.name;
         document.getElementById('imageFileName').textContent = t('imageLoaded', file.name);
         updateToolButtons();
         if (document.body.classList.contains('mode-image')) {
@@ -3730,6 +3742,22 @@
     yinYang.disabled = !isGrayOrBw;
     yinYang.style.opacity = isGrayOrBw ? '1' : '0.4';
     yinYang.style.pointerEvents = isGrayOrBw ? 'auto' : 'none';
+    // 仅黑白模式支持维度切换，其他强制逐位展开
+    const isBw = mode === 'bw';
+    const arrayDimSelect = document.getElementById('arrayDimSelect');
+    if (isBw) {
+      arrayDimSelect.disabled = false;
+    } else {
+      arrayDimSelect.value = '2d';
+      arrayDimSelect.disabled = true;
+      const dimWrap = arrayDimSelect.nextElementSibling;
+      if (dimWrap && dimWrap.querySelector('.custom-select-trigger')) {
+        dimWrap.querySelector('.custom-select-trigger').textContent = arrayDimSelect.options[arrayDimSelect.selectedIndex]?.textContent || '2D';
+        dimWrap.querySelectorAll('.custom-select-option').forEach(o => {
+          o.classList.toggle('selected', o.dataset.value === arrayDimSelect.value);
+        });
+      }
+    }
     if (document.body.classList.contains('mode-image')) {
       renderImageBitmap(false);
     }
@@ -4508,8 +4536,17 @@
       }
       // 模式切换时渲染
       if (mode === 'image') {
-        // 强制逐位展开模式
+        // 强制逐位展开模式，不可修改
         arrayDimSelect.value = '2d';
+        arrayDimSelect.disabled = true;
+        // 同步自定义下拉触发器文字
+        const dimWrap = arrayDimSelect.nextElementSibling;
+        if (dimWrap && dimWrap.querySelector('.custom-select-trigger')) {
+          dimWrap.querySelector('.custom-select-trigger').textContent = arrayDimSelect.options[arrayDimSelect.selectedIndex]?.textContent || '2D';
+          dimWrap.querySelectorAll('.custom-select-option').forEach(o => {
+            o.classList.toggle('selected', o.dataset.value === arrayDimSelect.value);
+          });
+        }
         // 阴阳码禁用（RGB565默认不支持）
         const yinYang = document.getElementById('yinYangSelect');
         yinYang.disabled = true;
@@ -4537,6 +4574,8 @@
         _imageUndoStack = [];
         renderImageMode();
       } else if (mode === 'draw') {
+        // 恢复维度可选
+        arrayDimSelect.disabled = false;
         // 恢复阴阳码可用
         const yinYang = document.getElementById('yinYangSelect');
         yinYang.disabled = false;
@@ -4562,6 +4601,8 @@
         window._bitmapIsDraw = true;
         renderDrawCanvas();
       } else {
+        // 恢复维度可选
+        arrayDimSelect.disabled = false;
         // 恢复阴阳码可用
         const yinYang = document.getElementById('yinYangSelect');
         yinYang.disabled = false;
