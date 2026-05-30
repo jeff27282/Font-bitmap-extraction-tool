@@ -3553,7 +3553,7 @@
     if (!_drawingState) exportOutput.value = generateImageExport();
   }
 
-  function renderImageMode() {
+  function renderImageMode(keepEdits) {
     const imgEl = document.getElementById('originalImage');
     const placeholder = document.getElementById('imagePlaceholder');
     if (_loadedImage) {
@@ -3571,9 +3571,11 @@
     }
     rawCanvas.width = 0;
     rawCanvas.height = 0;
-    _imageEdits = {};
-    _imageUndoStack = [];
-    renderImageBitmap();
+    if (!keepEdits) {
+      _imageEdits = {};
+      _imageUndoStack = [];
+    }
+    renderImageBitmap(!!keepEdits);
     updateToolButtons();
   }
 
@@ -4511,7 +4513,7 @@
 
   // ---- 清空画布 ----
   document.getElementById('clearCanvasBtn').addEventListener('click', function() {
-    if (!_drawMatrix) return;
+    if (!document.body.classList.contains('mode-draw') || !_drawMatrix) return;
     const h = _drawMatrix.length;
     const w = _drawMatrix[0].length;
     for (let r = 0; r < h; r++)
@@ -4546,7 +4548,7 @@
 
   // ---- 清空手动绘制的痕迹 ----
   document.getElementById('clearImageEditsBtn').addEventListener('click', function() {
-    if (!_imageOriginalData || !_imageBitmapData) return;
+    if (!document.body.classList.contains('mode-image') || !_imageOriginalData || !_imageBitmapData) return;
     pushUndoState();
     _imageEdits = {};
     // 从缓存恢复所有原始颜色
@@ -4575,9 +4577,34 @@
   // ---- 模式切换 ----
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      // 切换模式时关闭输出区域
-      if (_outputAreaActive) deactivateOutputArea();
+      // 切换模式时关闭输出区域、吸笔和画笔
+      if (typeof deactivateOutputArea === 'function' && _outputAreaActive) deactivateOutputArea();
+      if (_eyedropperActive) {
+        _eyedropperActive = false;
+        eyedropperBtn.classList.remove('btn-primary', 'btn-active');
+        document.getElementById('originalImage').classList.remove('eyedropper-active');
+        magnifier.style.display = 'none';
+      }
+      if (_drawBrushActive) {
+        _drawBrushActive = false;
+        drawBrushBtn.classList.remove('btn-primary', 'btn-active');
+        magnifier.style.display = 'none';
+      }
       const mode = this.dataset.mode;
+      // 保存当前模式的布局设置
+      const prevMode = document.body.classList.contains('mode-draw') ? 'draw'
+        : document.body.classList.contains('mode-image') ? 'image' : 'char';
+      if (!window._modeLayout) window._modeLayout = {};
+      window._modeLayout[prevMode] = {
+        cellSize: parseInt(cellSizeSlider.value),
+        paddingTop: parseInt(paddingTop.textContent) || 0,
+        paddingBottom: parseInt(paddingBottom.textContent) || 0,
+        paddingLeft: parseInt(paddingLeft.textContent) || 0,
+        paddingRight: parseInt(paddingRight.textContent) || 0,
+        offsetX: parseInt(offsetX.value) || 0,
+        offsetY: parseInt(offsetY.value) || 0
+      };
+
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       // 切换 body 的 mode 类（影响全局）
@@ -4591,6 +4618,26 @@
           textNode.textContent = mode === 'draw' || mode === 'image' ? t('imageOffset') : t('fontOffset');
         }
       }
+
+      // 恢复目标模式的布局设置（或使用默认值）
+      function applyModeLayout(m) {
+        const saved = window._modeLayout[m];
+        const defaults = { 'image': { cellSize:4, pt:0, pb:0, pl:0, pr:0, ox:0, oy:0 },
+                           'draw':  { cellSize:8, pt:0, pb:0, pl:0, pr:0, ox:0, oy:0 },
+                           'char':  { cellSize:4, pt:0, pb:0, pl:0, pr:0, ox:0, oy:0 } };
+        const cfg = saved || defaults[m];
+        cellSizeSlider.value = cfg.cellSize;
+        cellSizeDisplay.textContent = cfg.cellSize;
+        document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cell) === cfg.cellSize));
+        paddingTop.textContent = cfg.paddingTop !== undefined ? cfg.paddingTop : (cfg.pt || 0);
+        paddingBottom.textContent = cfg.paddingBottom !== undefined ? cfg.paddingBottom : (cfg.pb || 0);
+        paddingLeft.textContent = cfg.paddingLeft !== undefined ? cfg.paddingLeft : (cfg.pl || 0);
+        paddingRight.textContent = cfg.paddingRight !== undefined ? cfg.paddingRight : (cfg.pr || 0);
+        offsetX.value = cfg.offsetX !== undefined ? cfg.offsetX : (cfg.ox || 0);
+        offsetY.value = cfg.offsetY !== undefined ? cfg.offsetY : (cfg.oy || 0);
+        updateOffsetDisplay();
+      }
+
       // 模式切换时渲染
       if (mode === 'image') {
         // 强制逐位展开模式，不可修改
@@ -4609,27 +4656,21 @@
         yinYang.disabled = true;
         yinYang.style.opacity = '0.4';
         yinYang.style.pointerEvents = 'none';
-        // 重置图片宽度
-        imageWidthSlider.value = 64;
-        imageWidthDisplay.textContent = 64;
-        document.querySelectorAll('.image-mode-only .canvas-size-buttons .btn-size').forEach(b => b.classList.toggle('active', parseInt(b.dataset.w) === 64));
-        // 重置点阵单元大小为4
-        cellSizeSlider.value = 4;
-        cellSizeDisplay.textContent = 4;
-        document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cell) === 4));
-        // 重置边距偏移
-        paddingTop.textContent = 0;
-        paddingBottom.textContent = 0;
-        paddingLeft.textContent = 0;
-        paddingRight.textContent = 0;
-        offsetX.value = 0;
-        offsetY.value = 0;
-        updateOffsetDisplay();
         window._bitmapIsDraw = false;
-        _imageEdits = {};
-        _imageBitmapData = null;
-        _imageUndoStack = [];
-        renderImageMode();
+        applyModeLayout('image');
+        if (_imageBitmapData && _imageBitmapData.length > 0 && _loadedImage) {
+          // 已有图片编辑数据，保留不重置
+          renderImageMode(true);
+        } else {
+          // 首次进入或没有图片数据，重置图片宽度
+          imageWidthSlider.value = 64;
+          imageWidthDisplay.textContent = 64;
+          document.querySelectorAll('.image-mode-only .canvas-size-buttons .btn-size').forEach(b => b.classList.toggle('active', parseInt(b.dataset.w) === 64));
+          _imageEdits = {};
+          _imageBitmapData = null;
+          _imageUndoStack = [];
+          renderImageMode();
+        }
       } else if (mode === 'draw') {
         // 恢复维度可选
         arrayDimSelect.disabled = false;
@@ -4638,23 +4679,11 @@
         yinYang.disabled = false;
         yinYang.style.opacity = '1';
         yinYang.style.pointerEvents = 'auto';
-        // 重置点阵单元大小为8
-        cellSizeSlider.value = 8;
-        cellSizeDisplay.textContent = 8;
-        document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cell) === 8));
         // 重置画布尺寸为16×16
         canvasWidthInput.value = 16;
         canvasHeightInput.value = 16;
         document.querySelectorAll('.btn-size').forEach(b => b.classList.toggle('active', parseInt(b.dataset.w) === 16 && parseInt(b.dataset.h) === 16));
-        // 重置边距为0
-        paddingTop.textContent = 0;
-        paddingBottom.textContent = 0;
-        paddingLeft.textContent = 0;
-        paddingRight.textContent = 0;
-        // 重置偏移为0
-        offsetX.value = 0;
-        offsetY.value = 0;
-        updateOffsetDisplay();
+        applyModeLayout('draw');
         window._bitmapIsDraw = true;
         renderDrawCanvas();
       } else {
@@ -4669,19 +4698,7 @@
         fontSizeSlider.value = 16;
         fontSizeDisplay.textContent = 16;
         document.querySelectorAll('.btn-shortcut[data-size]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.size) === 16));
-        // 重置点阵单元大小为4
-        cellSizeSlider.value = 4;
-        cellSizeDisplay.textContent = 4;
-        document.querySelectorAll('.btn-shortcut[data-cell]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cell) === 4));
-        // 重置边距为0
-        paddingTop.textContent = 0;
-        paddingBottom.textContent = 0;
-        paddingLeft.textContent = 0;
-        paddingRight.textContent = 0;
-        // 重置偏移为0
-        offsetX.value = 0;
-        offsetY.value = 0;
-        updateOffsetDisplay();
+        applyModeLayout('char');
         window._bitmapIsDraw = false;
         fullRender();
       }
