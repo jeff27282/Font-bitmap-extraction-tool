@@ -3631,7 +3631,7 @@
     };
     const L = langDefs[lang] || langDefs.c;
 
-    const dim3d = colorMode === 'rgba' ? '][4' : (colorMode === 'rgb888' || colorMode === 'rgb332' ? '][3' : '');
+    const dim3d = colorMode === 'rgba' ? '][4' : (colorMode === 'rgb888' ? '][3' : '');
     const pixStr = colorMode === 'rgb565' ? 'uint16_t' : (colorMode === 'rgba' ? 'uint32_t' : '');
     const L2 = lang === 'c' || lang === 'arduino' ? { ...L, type: pixStr || L.type } : L;
 
@@ -3649,7 +3649,9 @@
       return L.braceE + L.semi + '\n\n';
     }
 
-    output += imgHeader('canvas0', exportH + '][' + exportW + dim3d);
+    const bwDim = (colorMode === 'bw' && document.getElementById('arrayDimSelect').value === '1d')
+      ? Math.ceil(exportW / 8) : exportW;
+    output += imgHeader('canvas0', exportH + '][' + bwDim + dim3d);
 
     function getPx(row, col) {
       const srcRow = row - pt + oy;
@@ -3661,13 +3663,37 @@
     }
 
     if (colorMode === 'bw') {
-      // 黑白：逐位 0/1（quantizeColor 已处理阴阳码）
-      for (let r = areaY; r < areaY + areaH; r++) {
-        const vals = [];
-        for (let c = areaX; c < areaX + areaW; c++) {
-          vals.push(getPx(r, c).r > 127 ? '1' : '0');
+      const dimMode = document.getElementById('arrayDimSelect').value;
+      if (dimMode === '1d') {
+        // 字节压缩：每 8 个 bit 打包为一个字节
+        const bytesPerRow = Math.ceil(exportW / 8);
+        for (let r = areaY; r < areaY + areaH; r++) {
+          const vals = [];
+          for (let b = 0; b < bytesPerRow; b++) {
+            let byteVal = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const col = areaX + b * 8 + bit;
+              if (col < areaX + exportW && getPx(r, col).r > 127) {
+                byteVal |= (1 << (7 - bit));
+              }
+            }
+            if (lang === 'python' || lang === 'js') {
+              vals.push(String(byteVal));
+            } else {
+              vals.push('0x' + byteVal.toString(16).toUpperCase().padStart(2, '0'));
+            }
+          }
+          output += (lang === 'python' ? '    [' : '  {') + vals.join(', ') + (lang === 'python' ? '],\n' : '},\n');
         }
-        output += (lang === 'python' ? '    [' : '  {') + vals.join(', ') + (lang === 'python' ? '],\n' : '},\n');
+      } else {
+        // 逐位展开：每个像素 0/1
+        for (let r = areaY; r < areaY + areaH; r++) {
+          const vals = [];
+          for (let c = areaX; c < areaX + areaW; c++) {
+            vals.push(getPx(r, c).r > 127 ? '1' : '0');
+          }
+          output += (lang === 'python' ? '    [' : '  {') + vals.join(', ') + (lang === 'python' ? '],\n' : '},\n');
+        }
       }
     } else if (colorMode === 'grayscale4' || colorMode === 'grayscale8') {
       for (let r = areaY; r < areaY + areaH; r++) {
@@ -3692,17 +3718,48 @@
         }
         output += '  {' + vals.join(', ') + '},\n';
       }
-    } else {
+    } else if (colorMode === 'rgb332') {
+      // RGB332: 每像素 1 字节 → 2D 数组 (打包 RRRGGGBB)
       for (let r = areaY; r < areaY + areaH; r++) {
         const vals = [];
         for (let c = areaX; c < areaX + areaW; c++) {
           const px = getPx(r, c);
+          const packed = ((Math.round(px.r / 36) & 7) << 5) |
+                         ((Math.round(px.g / 36) & 7) << 2) |
+                          (Math.round(px.b / 85) & 3);
           if (lang === 'python' || lang === 'js') {
-            vals.push('[' + px.r + ',' + px.g + ',' + px.b + ']');
+            vals.push(String(packed));
           } else {
-            vals.push('{0x' + px.r.toString(16).toUpperCase().padStart(2, '0') +
-                     ',0x' + px.g.toString(16).toUpperCase().padStart(2, '0') +
-                     ',0x' + px.b.toString(16).toUpperCase().padStart(2, '0') + '}');
+            vals.push('0x' + packed.toString(16).toUpperCase().padStart(2, '0'));
+          }
+        }
+        output += (lang === 'python' ? '    [' : '  {') + vals.join(', ') + (lang === 'python' ? '],\n' : '},\n');
+      }
+    } else {
+      // rgb888 / rgba: 输出多通道
+      for (let r = areaY; r < areaY + areaH; r++) {
+        const vals = [];
+        for (let c = areaX; c < areaX + areaW; c++) {
+          const px = getPx(r, c);
+          if (colorMode === 'rgba') {
+            // RGBA8888: 输出 4 通道 (R,G,B,A)
+            if (lang === 'python' || lang === 'js') {
+              vals.push('[' + px.r + ',' + px.g + ',' + px.b + ',255]');
+            } else {
+              vals.push('{0x' + px.r.toString(16).toUpperCase().padStart(2, '0') +
+                       ',0x' + px.g.toString(16).toUpperCase().padStart(2, '0') +
+                       ',0x' + px.b.toString(16).toUpperCase().padStart(2, '0') +
+                       ',0xFF}');
+            }
+          } else {
+            // rgb888: 输出 3 通道 (R,G,B)
+            if (lang === 'python' || lang === 'js') {
+              vals.push('[' + px.r + ',' + px.g + ',' + px.b + ']');
+            } else {
+              vals.push('{0x' + px.r.toString(16).toUpperCase().padStart(2, '0') +
+                       ',0x' + px.g.toString(16).toUpperCase().padStart(2, '0') +
+                       ',0x' + px.b.toString(16).toUpperCase().padStart(2, '0') + '}');
+            }
           }
         }
         output += (lang === 'python' ? '    [' : '  {') + vals.join(', ') + (lang === 'python' ? '],\n' : '},\n');
